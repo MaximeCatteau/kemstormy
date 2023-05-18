@@ -20,7 +20,7 @@ public class KemstormyApplication {
 
 		DiscordUtils utils = new DiscordUtils(discordUserService);
 		DiscordApi api = new DiscordApiBuilder()
-			.setToken("MTEwNzI3MDk0MDA1NzkzMTgxNg.GNaYEj.YXm-XxXgN2phOmJkyHebVazfaoRVXqbPB-D-5E")
+			.setToken("prank")
 			.addIntents(Intent.MESSAGE_CONTENT)
 			.login()
 			.join();

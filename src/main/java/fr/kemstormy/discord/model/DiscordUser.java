@@ -14,7 +14,7 @@ import lombok.Data;
 public class DiscordUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id;
+    private Long id;
 
     @Column(name = "discord_id")
     private String discordId;
