@@ -1,6 +1,7 @@
 package fr.kemstormy.discord.model;
 
 
+import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -18,4 +19,6 @@ public class FootballPlayer {
     private String lastName;
 
     private int age;
+
+    private EFootballPlayerGenerationType generationType;
 }
