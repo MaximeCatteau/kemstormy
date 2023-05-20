@@ -8,8 +8,10 @@ import org.javacord.api.entity.user.User;
 import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
 import fr.kemstormy.discord.model.DiscordUser;
 import fr.kemstormy.discord.model.FootballPlayer;
+import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
+import fr.kemstormy.discord.service.TeamService;
 import lombok.Data;
 
 @Data
@@ -17,10 +19,12 @@ public class DiscordUtils {
 
     private DiscordUserService discordUserService;
     private FootballPlayerService footballPlayerService;
+    private TeamService teamService;
 
-    public DiscordUtils(DiscordUserService discordUserService, FootballPlayerService footballPlayerService) {
+    public DiscordUtils(DiscordUserService discordUserService, FootballPlayerService footballPlayerService, TeamService teamService) {
         this.discordUserService = discordUserService;
         this.footballPlayerService = footballPlayerService;
+        this.teamService = teamService;
     }
 
     public String getCommand(String command, User messageAuthor) {
@@ -70,6 +74,14 @@ public class DiscordUtils {
                 this.footballPlayerService.createOrUpdatFootballPlayer(createdFootballPlayer);
 
                 msg = "Le joueur **" + createdFootballPlayer.getFirstName() + " " + createdFootballPlayer.getLastName() + "** a été créé.";
+
+                break;
+            case "teams":
+                List<Team> teams = this.teamService.getAllTeams();
+
+                for(Team t : teams) {
+                    msg += t.getId() + "# " + t.getName() + "\n";
+                }
 
                 break;
             default:
