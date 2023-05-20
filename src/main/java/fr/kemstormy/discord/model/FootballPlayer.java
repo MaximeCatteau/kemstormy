@@ -2,10 +2,12 @@ package fr.kemstormy.discord.model;
 
 
 import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -24,4 +26,8 @@ public class FootballPlayer {
     private int age;
 
     private EFootballPlayerGenerationType generationType;
+
+    @Nullable
+    @OneToOne
+    private DiscordUser owner;
 }

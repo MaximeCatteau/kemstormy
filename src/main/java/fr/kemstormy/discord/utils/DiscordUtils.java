@@ -26,6 +26,7 @@ public class DiscordUtils {
     public String getCommand(String command, User messageAuthor) {
         List<String> commands = this.removeCommandDiscriminator(command);
         String mainCommand = commands.get(0);
+        String msg = "";
 
         switch (mainCommand) {
             case "register":
@@ -34,9 +35,10 @@ public class DiscordUtils {
 
                 this.discordUserService.createOrUpdateDiscordUser(du);
 
-                return "Compte enregistré :white_check_mark:";
+                msg = "Compte enregistré :white_check_mark:";
+                break;
             case "players":
-                String msg = "";
+                msg = "";
                 List<FootballPlayer> fp = this.footballPlayerService.getAllFootballPlayers();
 
                 msg += "Il y a actuellement " + fp.size() + " joueurs enregistrés.\n";
@@ -47,14 +49,34 @@ public class DiscordUtils {
                     if (f.getGenerationType().equals(EFootballPlayerGenerationType.BY_BOT)) {
                         msg += "bot)\n";
                     } else if (f.getGenerationType().equals(EFootballPlayerGenerationType.BY_PLAYER)) {
-                        msg += "joueur)\n";
+                        msg += "joueur: " + f.getOwner().getDiscordId() + ")\n";
                     }
                 }
 
-                return msg;
+                break;
+            case "create":
+                if (commands.size() != 3) {
+                    msg = "Commande invalide, veuillez réessayer avec `!create prenom nom`";
+                    break;
+                }
+                FootballPlayer createdFootballPlayer = new FootballPlayer();
+                DiscordUser discordUser = this.discordUserService.getByDiscordId(messageAuthor.getIdAsString());
+
+                createdFootballPlayer.setAge(18);
+                createdFootballPlayer.setFirstName(commands.get(1));
+                createdFootballPlayer.setLastName(commands.get(2));
+                createdFootballPlayer.setOwner(discordUser);
+
+                this.footballPlayerService.createOrUpdatFootballPlayer(createdFootballPlayer);
+
+                msg = "Le joueur **" + createdFootballPlayer.getFirstName() + " " + createdFootballPlayer.getLastName() + "** a été créé.";
+
+                break;
             default:
-                return "Commande inconnue...";
+                msg = "Commande inconnue...";
+                break;
         }
+        return msg;
     }
 
     private List<String> removeCommandDiscriminator(String command) {
