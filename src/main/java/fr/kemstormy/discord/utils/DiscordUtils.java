@@ -1,5 +1,8 @@
 package fr.kemstormy.discord.utils;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,6 +16,10 @@ import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
 import fr.kemstormy.discord.service.TeamService;
 import lombok.Data;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 
 @Data
 public class DiscordUtils {
@@ -84,6 +91,23 @@ public class DiscordUtils {
                 }
 
                 break;
+            case "generate":
+                this.teamService.deleteAllTeams();
+                try {
+                    Object o = new JSONParser(JSONParser.MODE_JSON_SIMPLE).parse(new FileReader("teams.json"));
+                    JSONArray j = (JSONArray) o;
+
+                    List<Team> generatedTeams = this.convertToList(j);
+
+                    this.teamService.generateAllTeams(generatedTeams);
+
+                    msg = "Les équipes ont été générées correctement :white_check_mark:";
+                } catch (FileNotFoundException | ParseException e) {
+                    e.printStackTrace();
+                    msg = "Erreur lors de la génération des équipes :x:";
+                }
+
+                break;
             default:
                 msg = "Commande inconnue...";
                 break;
@@ -93,5 +117,21 @@ public class DiscordUtils {
 
     private List<String> removeCommandDiscriminator(String command) {
         return Arrays.asList(command.substring(1).split(" "));
+    }
+
+    private List<Team> convertToList(JSONArray jsonArray) {
+        List<Team> teams = new ArrayList<>();
+
+        for (Object obj : jsonArray) {
+            JSONObject rawTeam = (JSONObject) obj;
+            Team t = new Team();
+
+            t.setName(rawTeam.get("name").toString());
+            t.setLogo(rawTeam.get("logo").toString());
+
+            teams.add(t);
+        }
+
+        return teams;
     }
 }

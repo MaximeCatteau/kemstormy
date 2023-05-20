@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Paris Saint-Germain",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/langfr-1024px-Paris_Saint-Germain_Logo.svg.png"
+    },
+    {
+        "name": "RC Lens",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/3/3c/Logo_RC_Lens_2014.svg/langfr-800px-Logo_RC_Lens_2014.svg.png"
+    },
+    {
+        "name": "Olympique de Marseille",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/4/43/Logo_Olympique_de_Marseille.svg/langfr-800px-Logo_Olympique_de_Marseille.svg.png"
+    },
+    {
+        "name": "AS Monaco",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/5/58/Logo_AS_Monaco_FC_-_2021.svg/langfr-800px-Logo_AS_Monaco_FC_-_2021.svg.png"
+    },
+    {
+        "name": "Lille OSC",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/6/62/Logo_LOSC_Lille_2018.svg/langfr-1024px-Logo_LOSC_Lille_2018.svg.png"
+    },
+    {
+        "name": "Stade Rennais FC",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/e/e9/Logo_Stade_Rennais_FC.svg/langfr-800px-Logo_Stade_Rennais_FC.svg.png"
+    },
+    {
+        "name": "Olympique Lyonnais",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/a/a5/Logo_Olympique_Lyonnais_-_2022.svg/langfr-800px-Logo_Olympique_Lyonnais_-_2022.svg.png"
+    },
+    {
+        "name": "Clermont Foot 63",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/7/79/Logo_Clermont_Foot_63_2013.svg/langfr-800px-Logo_Clermont_Foot_63_2013.svg.png"
+    },
+    {
+        "name": "FC Lorient",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/1/1d/Logo_FC_Lorient_Bretagne-Sud.svg/langfr-800px-Logo_FC_Lorient_Bretagne-Sud.svg.png"
+    },
+    {
+        "name": "OGC Nice",
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/b/b1/Logo_OGC_Nice_2013.svg/langfr-800px-Logo_OGC_Nice_2013.svg.png"
+    }
+]

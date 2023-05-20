@@ -16,4 +16,12 @@ public class TeamService {
     public List<Team> getAllTeams() {
         return this.teamRepository.findAll();
     }
+
+    public List<Team> generateAllTeams(List<Team> teams) {
+        return this.teamRepository.saveAll(teams);
+    }
+
+    public void deleteAllTeams() {
+        this.teamRepository.deleteAll();
+    }
 }
