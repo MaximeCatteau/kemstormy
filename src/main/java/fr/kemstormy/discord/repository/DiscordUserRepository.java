@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import fr.kemstormy.discord.model.DiscordUser;
 
 @Repository
-public interface DiscordUserRepository extends JpaRepository<DiscordUser, String>{
+public interface DiscordUserRepository extends JpaRepository<DiscordUser, Long>{
     @Query(nativeQuery = true, value = "SELECT * from discord_user WHERE discord_id = :discordId")
     List<DiscordUser> findByDiscordId(@Param("discordId") String discordId);
 }

@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import fr.kemstormy.discord.service.DiscordUserService;
+import fr.kemstormy.discord.service.FootballPlayerService;
 import fr.kemstormy.discord.utils.DiscordUtils;
 
 @SpringBootApplication
@@ -17,8 +18,9 @@ public class KemstormyApplication {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(KemstormyApplication.class, args);
 
 		DiscordUserService discordUserService = applicationContext.getBean(DiscordUserService.class);
+		FootballPlayerService footballPlayerService = applicationContext.getBean(FootballPlayerService.class);
 
-		DiscordUtils utils = new DiscordUtils(discordUserService);
+		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService);
 		DiscordApi api = new DiscordApiBuilder()
 			.setToken("prank")
 			.addIntents(Intent.MESSAGE_CONTENT)
