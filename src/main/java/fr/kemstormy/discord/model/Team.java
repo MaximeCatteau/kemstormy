@@ -18,4 +18,20 @@ public class Team {
     private String name;
 
     private String logo;
+
+    /**
+     * Quotas of player, each club has several quotas of posts
+     * depending on their strategy
+     * 
+     * 23 players max
+     */
+
+    
+    private int quotaGoalKeepers;
+
+    private int quotaDefenders;
+
+    private int quotaMidfielders;
+
+    private int quotaForwards;
 }

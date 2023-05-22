@@ -1,42 +1,82 @@
 [
     {
         "name": "Paris Saint-Germain",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/langfr-1024px-Paris_Saint-Germain_Logo.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/langfr-1024px-Paris_Saint-Germain_Logo.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 6,
+        "quota_midfielders": 7,
+        "quota_forwards": 7
     },
     {
         "name": "RC Lens",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/3/3c/Logo_RC_Lens_2014.svg/langfr-800px-Logo_RC_Lens_2014.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/3/3c/Logo_RC_Lens_2014.svg/langfr-800px-Logo_RC_Lens_2014.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 7,
+        "quota_midfielders": 7,
+        "quota_forwards": 6
     },
     {
         "name": "Olympique de Marseille",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/4/43/Logo_Olympique_de_Marseille.svg/langfr-800px-Logo_Olympique_de_Marseille.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/4/43/Logo_Olympique_de_Marseille.svg/langfr-800px-Logo_Olympique_de_Marseille.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 6,
+        "quota_midfielders": 7,
+        "quota_forwards": 7
     },
     {
         "name": "AS Monaco",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/5/58/Logo_AS_Monaco_FC_-_2021.svg/langfr-800px-Logo_AS_Monaco_FC_-_2021.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/5/58/Logo_AS_Monaco_FC_-_2021.svg/langfr-800px-Logo_AS_Monaco_FC_-_2021.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 5,
+        "quota_midfielders": 7,
+        "quota_forwards": 8
     },
     {
         "name": "Lille OSC",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/6/62/Logo_LOSC_Lille_2018.svg/langfr-1024px-Logo_LOSC_Lille_2018.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/6/62/Logo_LOSC_Lille_2018.svg/langfr-1024px-Logo_LOSC_Lille_2018.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 6,
+        "quota_midfielders": 7,
+        "quota_forwards": 7
     },
     {
         "name": "Stade Rennais FC",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/e/e9/Logo_Stade_Rennais_FC.svg/langfr-800px-Logo_Stade_Rennais_FC.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/e/e9/Logo_Stade_Rennais_FC.svg/langfr-800px-Logo_Stade_Rennais_FC.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 7,
+        "quota_midfielders": 6,
+        "quota_forwards": 7
     },
     {
         "name": "Olympique Lyonnais",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/a/a5/Logo_Olympique_Lyonnais_-_2022.svg/langfr-800px-Logo_Olympique_Lyonnais_-_2022.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/a/a5/Logo_Olympique_Lyonnais_-_2022.svg/langfr-800px-Logo_Olympique_Lyonnais_-_2022.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 7,
+        "quota_midfielders": 8,
+        "quota_forwards": 5
     },
     {
         "name": "Clermont Foot 63",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/7/79/Logo_Clermont_Foot_63_2013.svg/langfr-800px-Logo_Clermont_Foot_63_2013.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/7/79/Logo_Clermont_Foot_63_2013.svg/langfr-800px-Logo_Clermont_Foot_63_2013.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 8,
+        "quota_midfielders": 7,
+        "quota_forwards": 5
     },
     {
         "name": "FC Lorient",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/1/1d/Logo_FC_Lorient_Bretagne-Sud.svg/langfr-800px-Logo_FC_Lorient_Bretagne-Sud.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/1/1d/Logo_FC_Lorient_Bretagne-Sud.svg/langfr-800px-Logo_FC_Lorient_Bretagne-Sud.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 7,
+        "quota_midfielders": 7,
+        "quota_forwards": 6
     },
     {
         "name": "OGC Nice",
-        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/b/b1/Logo_OGC_Nice_2013.svg/langfr-800px-Logo_OGC_Nice_2013.svg.png"
+        "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/b/b1/Logo_OGC_Nice_2013.svg/langfr-800px-Logo_OGC_Nice_2013.svg.png",
+        "quota_goalkeepers": 3,
+        "quota_defenders": 6,
+        "quota_midfielders": 7,
+        "quota_forwards": 7
     }
 ]
