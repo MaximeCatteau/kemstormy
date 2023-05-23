@@ -38,6 +38,8 @@ public class KemstormyApplication {
 
 	private static ConfigurableApplicationContext applicationContext;
 
+	private static final String TOKEN = "prank";
+
 	public static void main(String[] args) {
 		applicationContext = SpringApplication.run(KemstormyApplication.class, args);
 
@@ -47,7 +49,7 @@ public class KemstormyApplication {
 
 		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService);
 		DiscordApi api = new DiscordApiBuilder()
-			.setToken("prank")
+			.setToken(TOKEN)
 			.addIntents(Intent.MESSAGE_CONTENT)
 			.login()
 			.join();
@@ -81,7 +83,7 @@ public class KemstormyApplication {
 			footballPlayerService.createOrUpdateFootballPlayer(random);
 
 			DiscordApi api = new DiscordApiBuilder()
-				.setToken("prank")
+				.setToken(TOKEN)
 				.addIntents(Intent.MESSAGE_CONTENT)
 				.login()
 				.join();

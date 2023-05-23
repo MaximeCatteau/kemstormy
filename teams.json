@@ -5,7 +5,12 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 6,
         "quota_midfielders": 7,
-        "quota_forwards": 7
+        "quota_forwards": 7,
+        "stadium": {
+            "name": "Parc des Princes",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/PSG-Nantes_Parc_des_Princes_05.jpg/1280px-PSG-Nantes_Parc_des_Princes_05.jpg",
+            "capacity": 1000
+        }
     },
     {
         "name": "RC Lens",

@@ -14,6 +14,7 @@ import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.event.message.MessageCreateEvent;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -38,7 +39,7 @@ public class DiscordUtils {
     private FootballPlayerService footballPlayerService;
     private TeamService teamService;
 
-    public DiscordUtils(DiscordUserService discordUserService, FootballPlayerService footballPlayerService, TeamService teamService) {
+    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService) {
         this.discordUserService = discordUserService;
         this.footballPlayerService = footballPlayerService;
         this.teamService = teamService;
