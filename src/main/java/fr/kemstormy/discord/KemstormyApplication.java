@@ -52,7 +52,7 @@ public class KemstormyApplication {
 			.login()
 			.join();
 
-		championshipScheduling(teamService);
+		//championshipScheduling(teamService);
 
 		api.addMessageCreateListener(event -> {
 			if (!event.getMessageAuthor().isBotUser() && event.getMessageContent() != null && event.getMessageContent().length() > 0 && event.getMessageContent().startsWith("!")) {

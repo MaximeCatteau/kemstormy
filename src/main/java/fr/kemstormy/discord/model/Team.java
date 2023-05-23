@@ -1,9 +1,13 @@
 package fr.kemstormy.discord.model;
 
+import io.micrometer.common.lang.Nullable;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -18,6 +22,10 @@ public class Team {
     private String name;
 
     private String logo;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @Nullable
+    private Stadium stadium;
 
     /**
      * Quotas of player, each club has several quotas of posts

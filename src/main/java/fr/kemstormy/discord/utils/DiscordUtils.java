@@ -160,6 +160,9 @@ public class DiscordUtils {
                 embed.addField("Milieux", mid);
                 embed.addField("Attaquants", atck);
 
+                embed.setDescription(":stadium: " + t.getStadium().getName() + "(" + t.getStadium().getCapacity() + ")" );
+                embed.setImage(t.getStadium().getPhoto());
+
                 channel.sendMessage(embed);
                 msg = "";
 
