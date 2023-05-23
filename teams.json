@@ -24,7 +24,7 @@
             "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Stade_Bollaert_Delelis.JPG/800px-Stade_Bollaert_Delelis.JPG",
             "capacity": 1000
          }
-    }
+    },
     {
         "name": "Olympique de Marseille",
         "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/4/43/Logo_Olympique_de_Marseille.svg/langfr-800px-Logo_Olympique_de_Marseille.svg.png",
@@ -37,7 +37,7 @@
             "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Stadion_Marseille_Stade_V%C3%A9lodrome_%2833263196860%29.jpg/780px-Stadion_Marseille_Stade_V%C3%A9lodrome_%2833263196860%29.jpg",
             "capacity": 1000
          }
-    }
+    },
     {
         "name": "AS Monaco",
         "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/5/58/Logo_AS_Monaco_FC_-_2021.svg/langfr-800px-Logo_AS_Monaco_FC_-_2021.svg.png",
