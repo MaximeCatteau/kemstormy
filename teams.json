@@ -18,23 +18,38 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 7,
         "quota_midfielders": 7,
-        "quota_forwards": 6
-    },
+        "quota_forwards": 6,
+        "stadium": {
+            "name": "Stade Bollaert-Delelis",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Stade_Bollaert_Delelis.JPG/800px-Stade_Bollaert_Delelis.JPG",
+            "capacity": 1000
+         }
+    }
     {
         "name": "Olympique de Marseille",
         "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/4/43/Logo_Olympique_de_Marseille.svg/langfr-800px-Logo_Olympique_de_Marseille.svg.png",
         "quota_goalkeepers": 3,
         "quota_defenders": 6,
         "quota_midfielders": 7,
-        "quota_forwards": 7
-    },
+        "quota_forwards": 7,
+        "stadium": {
+            "name": "Orange Vélodrome",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Stadion_Marseille_Stade_V%C3%A9lodrome_%2833263196860%29.jpg/780px-Stadion_Marseille_Stade_V%C3%A9lodrome_%2833263196860%29.jpg",
+            "capacity": 1000
+         }
+    }
     {
         "name": "AS Monaco",
         "logo": "https://upload.wikimedia.org/wikipedia/fr/thumb/5/58/Logo_AS_Monaco_FC_-_2021.svg/langfr-800px-Logo_AS_Monaco_FC_-_2021.svg.png",
         "quota_goalkeepers": 3,
         "quota_defenders": 5,
         "quota_midfielders": 7,
-        "quota_forwards": 8
+        "quota_forwards": 8,
+        "stadium": {
+            "name": "Stade Louis-II",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Panoramio_-_V%26A_Dudush_-_stade_Louis_II.jpg/1024px-Panoramio_-_V%26A_Dudush_-_stade_Louis_II.jpg",
+            "capacity": 1000
+        }
     },
     {
         "name": "Lille OSC",
@@ -42,7 +57,12 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 6,
         "quota_midfielders": 7,
-        "quota_forwards": 7
+        "quota_forwards": 7,
+        "stadium": {
+            "name": "Decathlon Arena - Stade Pierre Mauroy",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Lille_vs_PSG_2019_-_Stade_Pierre_Mauroy.jpg/800px-Lille_vs_PSG_2019_-_Stade_Pierre_Mauroy.jpg",
+            "capacity": 1000
+        }
     },
     {
         "name": "Stade Rennais FC",
@@ -50,7 +70,12 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 7,
         "quota_midfielders": 6,
-        "quota_forwards": 7
+        "quota_forwards": 7,
+        "stadium":{
+            "name": "Roazhon Park",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Rennes_-_Montpellier_L1_20150815_-_Sc%C3%A8ne_match.JPG/800px-Rennes_-_Montpellier_L1_20150815_-_Sc%C3%A8ne_match.JPG",
+            "capacity": 1000
+        }
     },
     {
         "name": "Olympique Lyonnais",
@@ -58,7 +83,12 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 7,
         "quota_midfielders": 8,
-        "quota_forwards": 5
+        "quota_forwards": 5,
+        "stadium": {
+            "name": "Groupama Stadium",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Stade_des_Lumi%C3%A8res_-_24_janvier_2016.jpg/1024px-Stade_des_Lumi%C3%A8res_-_24_janvier_2016.jpg",
+            "capacity": 1000
+        }
     },
     {
         "name": "Clermont Foot 63",
@@ -66,7 +96,12 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 8,
         "quota_midfielders": 7,
-        "quota_forwards": 5
+        "quota_forwards": 5,
+        "stadium": {
+            "name": "Stade Gabriel-Montpied",
+            "photo": "https://img.lamontagne.fr/ElbzdB3Yj5WIyOAuelBiT5-T88H6iNBHqu6L_e1p4QA/fit/657/438/sm/0/bG9jYWw6Ly8vMDAvMDAvMDYvMjMvNDcvMjAwMDAwNjIzNDc2OA.jpg",
+            "capacity": 1000
+        }
     },
     {
         "name": "FC Lorient",
@@ -74,7 +109,12 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 7,
         "quota_midfielders": 7,
-        "quota_forwards": 6
+        "quota_forwards": 6,
+        "stadium": {
+            "name": "Stade du Moustoir",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Stade_du_Moustoir.jpg/800px-Stade_du_Moustoir.jpg",
+            "capacity": 1000
+        }
     },
     {
         "name": "OGC Nice",
@@ -82,6 +122,11 @@
         "quota_goalkeepers": 3,
         "quota_defenders": 6,
         "quota_midfielders": 7,
-        "quota_forwards": 7
+        "quota_forwards": 7,
+        "stadium": {
+            "name": "Allianz Riviera",
+            "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Allianzcoupdenvoi.jpg/800px-Allianzcoupdenvoi.jpg",
+            "capacity": 1000
+        }
     }
 ]
