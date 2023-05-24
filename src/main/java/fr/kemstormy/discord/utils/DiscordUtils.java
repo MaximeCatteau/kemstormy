@@ -11,6 +11,7 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
+import org.javacord.api.entity.message.embed.Embed;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.event.message.MessageCreateEvent;
@@ -22,9 +23,11 @@ import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
 import fr.kemstormy.discord.enums.EFootballPlayerPost;
 import fr.kemstormy.discord.model.DiscordUser;
 import fr.kemstormy.discord.model.FootballPlayer;
+import fr.kemstormy.discord.model.League;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
+import fr.kemstormy.discord.service.LeagueService;
 import fr.kemstormy.discord.service.TeamService;
 import lombok.Data;
 import net.minidev.json.JSONArray;
@@ -38,11 +41,13 @@ public class DiscordUtils {
     private DiscordUserService discordUserService;
     private FootballPlayerService footballPlayerService;
     private TeamService teamService;
+    private LeagueService leagueService;
 
-    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService) {
+    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy LeagueService leagueService) {
         this.discordUserService = discordUserService;
         this.footballPlayerService = footballPlayerService;
         this.teamService = teamService;
+        this.leagueService = leagueService;
     }
 
     public String getCommand(String command, User messageAuthor, MessageCreateEvent event) {
@@ -167,6 +172,38 @@ public class DiscordUtils {
                 channel.sendMessage(embed);
                 msg = "";
 
+                break;
+
+            case "league":
+                if (commands.size() < 2) {
+                    msg = "Mauvaise commande";
+                    break;
+                }
+
+                List<String> copyLeagueCommands = new ArrayList(commands);
+
+                String leagueName = copyLeagueCommands.get(1);
+
+                if (commands.size() > 2) {
+                    copyLeagueCommands.remove(0);
+                    leagueName = copyLeagueCommands.stream().collect(Collectors.joining(" "));
+                }
+
+                League league = this.leagueService.getLeagueByName(leagueName);
+                if (league == null) {
+                    msg = "Championnat inconnu";
+                    break;
+                }
+
+                List<Team> leagueTeams = this.teamService.getLeagueTeams(league.getId());
+
+                EmbedBuilder leagueEmbed = new EmbedBuilder();
+                leagueEmbed.setTitle(league.getName());
+                leagueEmbed.setThumbnail(league.getLogo());
+                for (Team leagueTeam : leagueTeams) {
+                    leagueEmbed.addField("" + (leagueTeams.indexOf(leagueTeam)+1), leagueTeam.getName());
+                  }
+                channel.sendMessage(leagueEmbed);
                 break;
             case "generate":
                 if (commands.size() != 2) {

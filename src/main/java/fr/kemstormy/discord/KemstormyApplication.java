@@ -29,6 +29,7 @@ import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.model.Week;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
+import fr.kemstormy.discord.service.LeagueService;
 import fr.kemstormy.discord.service.TeamService;
 import fr.kemstormy.discord.utils.DiscordUtils;
 
@@ -38,7 +39,7 @@ public class KemstormyApplication {
 
 	private static ConfigurableApplicationContext applicationContext;
 
-	private static final String TOKEN = "MTEwNzI3MDk0MDA1NzkzMTgxNg.GOGCz4._G7K08W43oVD7aQp-wX0n7hnZSNteSREC1HICg";
+	private static final String TOKEN = "MTEwNzI3MDk0MDA1NzkzMTgxNg.GilyqF.SwVVmmiR4dH5O-pmdZgTn27OQwyQKvnLliPwTk";
 
 	public static void main(String[] args) {
 		applicationContext = SpringApplication.run(KemstormyApplication.class, args);
@@ -46,8 +47,9 @@ public class KemstormyApplication {
 		DiscordUserService discordUserService = applicationContext.getBean(DiscordUserService.class);
 		FootballPlayerService footballPlayerService = applicationContext.getBean(FootballPlayerService.class);
 		TeamService teamService = applicationContext.getBean(TeamService.class);
+		LeagueService leagueService = applicationContext.getBean(LeagueService.class);
 
-		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService);
+		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService, leagueService);
 		DiscordApi api = new DiscordApiBuilder()
 			.setToken(TOKEN)
 			.addIntents(Intent.MESSAGE_CONTENT)
