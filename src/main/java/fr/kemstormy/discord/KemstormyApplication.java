@@ -38,7 +38,7 @@ public class KemstormyApplication {
 
 	private static ConfigurableApplicationContext applicationContext;
 
-	private static final String TOKEN = "prank";
+	private static final String TOKEN = "MTEwNzI3MDk0MDA1NzkzMTgxNg.GOGCz4._G7K08W43oVD7aQp-wX0n7hnZSNteSREC1HICg";
 
 	public static void main(String[] args) {
 		applicationContext = SpringApplication.run(KemstormyApplication.class, args);
