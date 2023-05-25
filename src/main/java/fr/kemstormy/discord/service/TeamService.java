@@ -22,6 +22,10 @@ public class TeamService {
         return this.teamRepository.findByTeamName(teamName);
     }
 
+    public List<Team> getLeagueTeams(Long leagueId) {
+        return this.teamRepository.getLeagueTeams(leagueId);
+    }
+
     public List<Team> generateAllTeams(List<Team> teams) {
         return this.teamRepository.saveAll(teams);
     }

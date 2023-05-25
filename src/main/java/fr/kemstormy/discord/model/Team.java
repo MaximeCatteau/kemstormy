@@ -25,6 +25,10 @@ public class Team {
     @Nullable
     private Stadium stadium;
 
+    @OneToOne
+    @Nullable
+    private League league;
+
     /**
      * Quotas of player, each club has several quotas of posts
      * depending on their strategy
