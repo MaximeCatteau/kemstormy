@@ -28,6 +28,7 @@ import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
 import fr.kemstormy.discord.service.LeagueService;
+import fr.kemstormy.discord.service.MatchService;
 import fr.kemstormy.discord.service.TeamService;
 import lombok.Data;
 import net.minidev.json.JSONArray;
@@ -42,12 +43,14 @@ public class DiscordUtils {
     private FootballPlayerService footballPlayerService;
     private TeamService teamService;
     private LeagueService leagueService;
+    private MatchService matchService;
 
-    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy LeagueService leagueService) {
+    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy MatchService matchService, @Lazy LeagueService leagueService) {
         this.discordUserService = discordUserService;
         this.footballPlayerService = footballPlayerService;
         this.teamService = teamService;
         this.leagueService = leagueService;
+        this.matchService = matchService;
     }
 
     public String getCommand(String command, User messageAuthor, MessageCreateEvent event) {
@@ -238,6 +241,30 @@ public class DiscordUtils {
                     msg = "Choisissez `players` ou `teams`.";
                     break;
                 }
+            case "match":
+                List<Team> opponents = this.teamService.composeRandomMatch();
+                Team home = opponents.get(0);
+                Team away = opponents.get(1);
+                
+
+                EmbedBuilder matchPreviewEmbed = new EmbedBuilder();
+                matchPreviewEmbed.setTitle(home.getName() + " - " + away.getName());
+
+                this.matchService.createMatch(home, away, new League());
+
+                matchPreviewEmbed.setDescription(":stadium: " + home.getStadium().getName());
+                matchPreviewEmbed.setImage(home.getStadium().getPhoto());
+
+                channel.sendMessage(matchPreviewEmbed);
+                msg = "";
+                break;
+            case "play":
+                try {
+                    this.matchService.playMatch(channel);
+                } catch(InterruptedException e) {
+                    msg = "Match interrompu";
+                }
+                break;
             default:
                 msg = "Commande inconnue...";
                 break;

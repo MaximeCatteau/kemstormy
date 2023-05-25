@@ -19,4 +19,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     @Query(nativeQuery = true, value = "select * from team where league_id  = :leagueId")
     public List<Team> getLeagueTeams(@Param("leagueId") Long leagueId);
+    
+    @Query(nativeQuery = true, value = "select * from team t order by random() limit(2)")
+    public List<Team> getTwoRandomTeamsForMatch();
 }

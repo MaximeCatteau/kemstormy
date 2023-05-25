@@ -1,18 +1,15 @@
 package fr.kemstormy.discord;
 
 import java.time.Instant;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hibernate.mapping.Collection;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
@@ -30,6 +27,7 @@ import fr.kemstormy.discord.model.Week;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
 import fr.kemstormy.discord.service.LeagueService;
+import fr.kemstormy.discord.service.MatchService;
 import fr.kemstormy.discord.service.TeamService;
 import fr.kemstormy.discord.utils.DiscordUtils;
 
@@ -39,7 +37,7 @@ public class KemstormyApplication {
 
 	private static ConfigurableApplicationContext applicationContext;
 
-	private static final String TOKEN = "MTEwNzI3MDk0MDA1NzkzMTgxNg.GilyqF.SwVVmmiR4dH5O-pmdZgTn27OQwyQKvnLliPwTk";
+	private static final String TOKEN = "prank";
 
 	public static void main(String[] args) {
 		applicationContext = SpringApplication.run(KemstormyApplication.class, args);
@@ -48,8 +46,9 @@ public class KemstormyApplication {
 		FootballPlayerService footballPlayerService = applicationContext.getBean(FootballPlayerService.class);
 		TeamService teamService = applicationContext.getBean(TeamService.class);
 		LeagueService leagueService = applicationContext.getBean(LeagueService.class);
+		MatchService matchService = applicationContext.getBean(MatchService.class);
 
-		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService, leagueService);
+		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService, matchService, leagueService);
 		DiscordApi api = new DiscordApiBuilder()
 			.setToken(TOKEN)
 			.addIntents(Intent.MESSAGE_CONTENT)
