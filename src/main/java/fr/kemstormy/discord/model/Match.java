@@ -6,9 +6,12 @@ import java.util.List;
 
 import fr.kemstormy.discord.enums.EMatchStatus;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -22,27 +25,21 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     Team homeTeam;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     Team awayTeam;
 
     Instant date;
 
     EMatchStatus status;
 
-    @OneToMany
-    List<FootballPlayer> scorers = new ArrayList<>();
-
-    @OneToMany
-    List<FootballPlayer> decisivePassers = new ArrayList<>();
-
     int scoreHome = 0;
 
     int scoreAway = 0;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     League competition;
 
     public String toString() {

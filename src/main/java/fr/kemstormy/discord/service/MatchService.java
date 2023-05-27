@@ -1,12 +1,16 @@
 package fr.kemstormy.discord.service;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.hibernate.Hibernate;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +21,20 @@ import fr.kemstormy.discord.enums.EMatchAction;
 import fr.kemstormy.discord.enums.EMatchEvent;
 import fr.kemstormy.discord.enums.EMatchStatus;
 import fr.kemstormy.discord.model.FootballPlayer;
+import fr.kemstormy.discord.model.Ladder;
 import fr.kemstormy.discord.model.League;
 import fr.kemstormy.discord.model.Match;
+import fr.kemstormy.discord.model.MatchDecisivePasser;
+import fr.kemstormy.discord.model.MatchStriker;
 import fr.kemstormy.discord.model.Team;
+import fr.kemstormy.discord.model.Week;
 import fr.kemstormy.discord.repository.FootballPlayerRepository;
+import fr.kemstormy.discord.repository.LadderRepository;
+import fr.kemstormy.discord.repository.MatchDecisivePasserRepository;
 import fr.kemstormy.discord.repository.MatchRepository;
+import fr.kemstormy.discord.repository.MatchStrikerRepository;
+import fr.kemstormy.discord.repository.TeamRepository;
+import fr.kemstormy.discord.resource.MatchDataResource;
 
 @Service
 public class MatchService {
@@ -30,6 +43,18 @@ public class MatchService {
 
     @Autowired
     private FootballPlayerRepository footballPlayerRepository;
+
+    @Autowired 
+    private TeamRepository teamRepository;
+
+    @Autowired
+    private LadderRepository ladderRepository;
+
+    @Autowired
+    private MatchStrikerRepository matchStrikerRepository;
+
+    @Autowired
+    private MatchDecisivePasserRepository matchDecisivePasserRepository;
 
     public Match createMatch(Team home, Team away, League league) {
         Match m = new Match();
@@ -47,57 +72,128 @@ public class MatchService {
     }
 
     public void playMatch(TextChannel channel) throws InterruptedException {
-        Match m = this.matchRepository.getRandomMatch();
+        Match m = this.matchRepository.getNextMatchToPlay();
         Random timeRandomOffset = new Random();
+        Random randomPlayer = new Random();
 
-        Team homeTeam = m.getHomeTeam();
-        Team awayTeam = m.getAwayTeam();
+        Team homeTeam = (Team) Hibernate.unproxy(m.getHomeTeam());
+        Team awayTeam = (Team) Hibernate.unproxy(m.getAwayTeam());
 
         List<FootballPlayer> startingHome = this.generateComposition(homeTeam);
         List<FootballPlayer> startingAway = this.generateComposition(awayTeam);
+        List<FootballPlayer> scorers = new ArrayList<>();
+        List<FootballPlayer> decisivePassers = new ArrayList<>();
+
+        Ladder homeLadder = this.ladderRepository.getByLeagueAndTeam(homeTeam.getLeague().getId(), homeTeam.getId());
+        Ladder awayLadder = this.ladderRepository.getByLeagueAndTeam(awayTeam.getLeague().getId(), awayTeam.getId());
+
+        m.setStatus(EMatchStatus.IN_PROGRESS);
+        this.matchRepository.save(m);
+
+        // Coin toss
+        Team possesion = this.coinToss(homeTeam, awayTeam);
+
+        // The football player who has the ball is one of the forwards of possession team
+        FootballPlayer possessioner = this.defineKickOffPlayer(possesion.equals(homeTeam) ? startingHome : startingAway);
+
+        // Define the first action to do
+        EMatchAction firstAction = EMatchAction.defineAction(possessioner, true);
 
         List<FootballPlayer> allPlayers = new ArrayList<>();
         allPlayers.addAll(startingHome);
         allPlayers.addAll(startingAway);
 
+        MatchDataResource matchData = new MatchDataResource();
+
+        matchData.setMatch(m);
+        matchData.setHomeTeam(homeTeam);
+        matchData.setAwayTeam(awayTeam);
+        matchData.setScorers(scorers);
+        matchData.setPassers(decisivePassers);
+        matchData.setMinute(0);
+        matchData.setScoreHome(0);
+        matchData.setScoreAway(0);
+        matchData.setAction(firstAction);
+        matchData.setPossessioner(possessioner);
+
         channel.sendMessage("Début du match entre " + homeTeam.getName() + " et " + awayTeam.getName() + " (" + homeTeam.getStadium().getName() + ") !");
-        int scoreHome = 0;
-        int scoreAway = 0;
 
-        this.sendCompoEmbed(channel, homeTeam, startingHome);
+        this.sendCompoEmbed(channel, homeTeam, startingHome, true);
         TimeUnit.SECONDS.sleep(2);
-        this.sendCompoEmbed(channel, awayTeam, startingAway);
+        this.sendCompoEmbed(channel, awayTeam, startingAway, false);
         TimeUnit.SECONDS.sleep(2);
 
-        for (int i = 1; i < 95; i+=timeRandomOffset.nextInt(10)+1) {
-            Random randomPlayer = new Random();
-            FootballPlayer actionPlayer = allPlayers.get(randomPlayer.nextInt(allPlayers.size()));
+        List<FootballPlayer> mates = EMatchAction.getEligibleTeamMates(firstAction, possesion.equals(homeTeam) ? startingHome : startingAway, possessioner);
 
-            EMatchAction matchAction = EMatchAction.processRandomAction(actionPlayer, homeTeam, awayTeam);
-            EMatchEvent matchEvent = EMatchAction.playAction(channel, matchAction, actionPlayer, homeTeam, startingHome, awayTeam, startingAway, i, scoreHome, scoreAway);
+        channel.sendMessage("0' - " + possessioner.getMatchName() + " donne le coup d'envoi de cette rencontre !");
 
-            switch (matchEvent) {
-                case GOAL_HOME:
-                    scoreHome++;
-                    channel.sendMessage(i + "' - But pour " + homeTeam.getName() + " (" + scoreHome + " - " + scoreAway + ") !");
-                    break;
-                case GOAL_AWAY:
-                    scoreAway++;
-                    channel.sendMessage(i + "' - But pour " + awayTeam.getName() + " (" + scoreHome + " - " + scoreAway + ") !");
-                default:
-                    break;
-            }
+        matchData = EMatchAction.playAction(channel, matchData, mates, possesion.equals(homeTeam) ? startingHome : startingAway);
 
-            TimeUnit.SECONDS.sleep(3);
+        for (int i = 1; i < 90; i+=timeRandomOffset.nextInt(10)+1) {
+            FootballPlayer randomPossessionner = allPlayers.get(randomPlayer.nextInt(allPlayers.size()));
+            EMatchAction actionToPlay = EMatchAction.defineAction(randomPossessionner, false);
+            List<FootballPlayer> teamWithBall = possesion.equals(homeTeam) ? startingHome : startingAway;
+            mates = EMatchAction.getEligibleTeamMates(actionToPlay, teamWithBall, possessioner);
+
+            matchData.setPossessioner(randomPossessionner);
+            matchData.setAction(actionToPlay);
+            matchData.setMinute(i);
+
+            matchData = EMatchAction.playAction(channel, matchData, mates, teamWithBall);
+
+            TimeUnit.SECONDS.sleep(2);
         }
 
-        if (scoreHome > scoreAway) {
-            channel.sendMessage("Fin du match ! Victoire de **" + homeTeam.getName() + "** (" + scoreHome + " - " + scoreAway + ")");
-        } else if (scoreHome < scoreAway) {
-            channel.sendMessage("Fin du match ! Victoire de **" + awayTeam.getName() + "** (" + scoreHome + " - " + scoreAway + ")");
+        if (matchData.getScoreHome() > matchData.getScoreAway()) {
+            homeLadder.setVictories(homeLadder.getVictories() + 1);
+            awayLadder.setLoses(awayLadder.getLoses() + 1);
+            channel.sendMessage("Fin du match ! Victoire de **" + homeTeam.getName() + "** (" + matchData.getScoreHome() + " - " + matchData.getScoreAway() + ")");
+        } else if (matchData.getScoreHome() < matchData.getScoreAway()) {
+            homeLadder.setLoses(homeLadder.getLoses() + 1);
+            awayLadder.setVictories(awayLadder.getVictories() + 1);
+            channel.sendMessage("Fin du match ! Victoire de **" + awayTeam.getName() + "** (" + matchData.getScoreHome() + " - " + matchData.getScoreAway() + ")");
         } else {
-            channel.sendMessage("Fin du match ! Match nul... (" + scoreHome + " - " + scoreAway + ")");
+            homeLadder.setDraws(homeLadder.getDraws() + 1);
+            awayLadder.setDraws(awayLadder.getDraws() + 1);
+            channel.sendMessage("Fin du match ! Match nul... (" + matchData.getScoreHome() + " - " + matchData.getScoreAway() + ")");
         }
+
+        homeLadder.setScoredGoals(homeLadder.getScoredGoals() + matchData.getScoreHome());
+        homeLadder.setConcededGoals(homeLadder.getConcededGoals() + matchData.getScoreAway());
+        awayLadder.setScoredGoals(awayLadder.getScoredGoals() + matchData.getScoreAway());
+        awayLadder.setConcededGoals(awayLadder.getConcededGoals() + matchData.getScoreHome());
+
+        this.ladderRepository.save(homeLadder);
+        this.ladderRepository.save(awayLadder);
+
+        m.setStatus(EMatchStatus.COMPLETED);
+        m.setScoreHome(matchData.getScoreHome());
+        m.setScoreAway(matchData.getScoreAway());
+
+        List<MatchStriker> strikersToAdd = new ArrayList<>();
+        List<MatchDecisivePasser> decisivePassersToAdd = new ArrayList<>();
+
+        for (FootballPlayer f : matchData.getScorers()) {
+            MatchStriker ms = new MatchStriker();
+            ms.setFootballPlayer(f);
+            ms.setMatch(m);
+            strikersToAdd.add(ms);
+        }
+
+        this.matchStrikerRepository.saveAll(strikersToAdd);
+
+        for (FootballPlayer f : matchData.getPassers()) {
+            MatchDecisivePasser mdp = new MatchDecisivePasser();
+            mdp.setFootballPlayer(f);
+            mdp.setMatch(m);
+            decisivePassersToAdd.add(mdp);
+        }
+
+        this.matchDecisivePasserRepository.saveAll(decisivePassersToAdd);
+
+        System.out.println("Fin du match");
+
+        this.matchRepository.save(m);
     }
 
     public List<FootballPlayer> generateComposition(Team team) {
@@ -111,7 +207,7 @@ public class MatchService {
         return compo;
     }
 
-    public void sendCompoEmbed(TextChannel tc, Team team, List<FootballPlayer> compo) {
+    public void sendCompoEmbed(TextChannel tc, Team team, List<FootballPlayer> compo, boolean isHomeTeam) {
         EmbedBuilder embed = new EmbedBuilder();
 
         List<FootballPlayer> goalkeepers = compo.stream().filter(fp -> fp.getPost().equals(EFootballPlayerPost.GOALKEEPER)).toList();
@@ -128,6 +224,125 @@ public class MatchService {
 
         embed.setThumbnail(team.getLogo());
 
+        if (isHomeTeam) {
+            embed.setThumbnail(team.getHomeJersey());
+        } else {
+            embed.setThumbnail(team.getAwayJersey());
+        }
+
         tc.sendMessage(embed);
     }
+
+    private Team coinToss(Team home, Team away) {
+        Random r = new Random();
+        return r.nextBoolean() ? home : away;
+    }
+
+    private FootballPlayer defineKickOffPlayer(List<FootballPlayer> teamPlayers) {
+        Random r = new Random();
+        List<FootballPlayer> forwards = teamPlayers.stream().filter(fp -> fp.getPost().equals(EFootballPlayerPost.FORWARD)).toList();
+
+        return forwards.get(r.nextInt(forwards.size()));
+    }
+
+    public void championshipScheduling(League league) throws InterruptedException {
+		List<Team> teams = this.teamRepository.getLeagueTeams(league.getId());
+
+		int totalDays = teams.size() - 1;
+		int halfSize = teams.size() /2;
+
+		List<Team> copyTeams = new ArrayList(teams);
+		copyTeams.remove(teams.get(0));
+
+		List<Week> weeks = new ArrayList<>();
+
+		for (int day = 0; day < totalDays; day++) {
+			Week week = new Week();
+			List<Match> weekMatchs = new ArrayList<>();
+			week.setNumber(day + 1);
+
+			int teamIdx = day % copyTeams.size();
+
+			Match match = new Match();
+			match.setHomeTeam(copyTeams.get(teamIdx));
+			match.setAwayTeam(teams.get(0));
+            match.setScoreHome(0);
+            match.setScoreAway(0);
+            match.setCompetition(league);
+            match.setStatus(EMatchStatus.COMING);
+
+			weekMatchs.add(match);
+
+			for (int idx = 1; idx < halfSize; idx++) {
+				Match m = new Match();
+				int firstTeam = (day + idx) % copyTeams.size();
+				int secondTeam = (day + copyTeams.size() - idx) % copyTeams.size();
+
+				m.setHomeTeam(copyTeams.get(firstTeam));
+				m.setAwayTeam(copyTeams.get(secondTeam));
+                m.setScoreHome(0);
+                m.setScoreAway(0);
+                m.setCompetition(league);
+                m.setStatus(EMatchStatus.COMING);
+
+				weekMatchs.add(m);
+			}
+
+			week.setMatchs(weekMatchs);
+			weeks.add(week);
+		}
+
+		for (int day = 0; day < totalDays; day++) {
+			Week week = new Week();
+			List<Match> weekMatchs = new ArrayList<>();
+			week.setNumber(copyTeams.size() +day + 1);
+
+			int teamIdx = day % copyTeams.size();
+
+			Match match = new Match();
+			match.setHomeTeam(teams.get(0));
+			match.setAwayTeam(copyTeams.get(teamIdx));
+            match.setScoreHome(0);
+            match.setScoreAway(0);
+            match.setCompetition(league);
+            match.setStatus(EMatchStatus.COMING);
+
+			weekMatchs.add(match);
+
+			for (int idx = 1; idx < halfSize; idx++) {
+				Match m = new Match();
+				int firstTeam = (day + copyTeams.size() - idx) % copyTeams.size();
+				int secondTeam = (day + idx) % copyTeams.size();
+
+				m.setHomeTeam(copyTeams.get(firstTeam));
+				m.setAwayTeam(copyTeams.get(secondTeam));
+                m.setScoreHome(0);
+                m.setScoreAway(0);
+                m.setCompetition(league);
+                m.setStatus(EMatchStatus.COMING);
+
+				weekMatchs.add(m);
+			}
+
+			week.setMatchs(weekMatchs);
+			weeks.add(week);
+		}
+	
+		
+		Collections.shuffle(weeks);
+		
+		for (Week w : weeks) {
+			Instant today = Instant.now();
+
+			int minHour = 14;
+
+			Instant matchDay = today.plus(weeks.indexOf(w), ChronoUnit.DAYS);
+
+			for (Match m : w.getMatchs()) {
+				Instant matchTime = matchDay.atZone(ZoneOffset.UTC).withHour((minHour + (w.getMatchs().indexOf(m) * 1))).withMinute(0).withSecond(0).withNano(0).toInstant();
+                m.setDate(matchTime);
+                this.matchRepository.save(m);
+			}
+		}
+	}
 }
