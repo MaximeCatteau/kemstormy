@@ -28,6 +28,7 @@ import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
 import fr.kemstormy.discord.service.LeagueService;
+import fr.kemstormy.discord.service.MatchService;
 import fr.kemstormy.discord.service.TeamService;
 import lombok.Data;
 import net.minidev.json.JSONArray;
@@ -42,15 +43,17 @@ public class DiscordUtils {
     private FootballPlayerService footballPlayerService;
     private TeamService teamService;
     private LeagueService leagueService;
+    private MatchService matchService;
 
-    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy LeagueService leagueService) {
+    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy MatchService matchService, @Lazy LeagueService leagueService) {
         this.discordUserService = discordUserService;
         this.footballPlayerService = footballPlayerService;
         this.teamService = teamService;
         this.leagueService = leagueService;
+        this.matchService = matchService;
     }
 
-    public String getCommand(String command, User messageAuthor, MessageCreateEvent event) {
+    public String getCommand(String command, User messageAuthor, MessageCreateEvent event) throws InterruptedException {
         List<String> commands = this.removeCommandDiscriminator(command);
         String mainCommand = commands.get(0);
         String msg = "";
@@ -83,8 +86,8 @@ public class DiscordUtils {
 
                 break;
             case "create":
-                if (commands.size() != 3) {
-                    msg = "Commande invalide, veuillez réessayer avec `!create prenom nom`";
+                if (commands.size() != 4) {
+                    msg = "Commande invalide, veuillez réessayer avec `!create prenom nom post`";
                     break;
                 }
                 FootballPlayer createdFootballPlayer = new FootballPlayer();
@@ -94,6 +97,7 @@ public class DiscordUtils {
                 createdFootballPlayer.setFirstName(commands.get(1));
                 createdFootballPlayer.setLastName(commands.get(2));
                 createdFootballPlayer.setOwner(discordUser);
+                createdFootballPlayer.setPost(EFootballPlayerPost.valueOf(commands.get(3).toUpperCase()));
 
                 this.footballPlayerService.createOrUpdateFootballPlayer(createdFootballPlayer);
 
@@ -206,7 +210,7 @@ public class DiscordUtils {
                 channel.sendMessage(leagueEmbed);
                 break;
             case "generate":
-                if (commands.size() != 2) {
+                if (commands.size() < 2) {
                     msg = "Mauvaise commande";
                     break;
                 }
@@ -229,15 +233,56 @@ public class DiscordUtils {
                     break;
                 } else if (commands.get(1).equals("players")) {
                     List<FootballPlayer> generatedPlayers = this.footballPlayerService.generateBotFootballPlayers();
-                    msg = "Joueurs générés (20) :\n";
+                    msg = "Joueurs générés (30) :\n";
                     for (FootballPlayer footballPlayer : generatedPlayers) {
                         msg += footballPlayer.getFirstName() + " " + footballPlayer.getLastName() + " (" + footballPlayer.getPost().name() + ")\n";
                     }
                     break;
-                } else {
+                } else if (commands.get(1).equals("matchs")) {
+                    List<String> cmds = new ArrayList(commands);
+
+                    String mainLeagueName = cmds.get(2);
+
+                    if (commands.size() > 3) {
+                        cmds.remove(0);
+                        cmds.remove(0);
+                        mainLeagueName = cmds.stream().collect(Collectors.joining(" "));
+                    }
+
+                    League l = this.leagueService.getLeagueByName(mainLeagueName);
+
+                    this.matchService.championshipScheduling(l);
+                    msg = ":white_check_mark: Matchs générés pour le championnat : " + l.getName() + " !";
+                    break;
+                }
+                else {
                     msg = "Choisissez `players` ou `teams`.";
                     break;
                 }
+            case "match":
+                List<Team> opponents = this.teamService.composeRandomMatch();
+                Team home = opponents.get(0);
+                Team away = opponents.get(1);
+                League homeLeague = home.getLeague();
+
+                EmbedBuilder matchPreviewEmbed = new EmbedBuilder();
+                matchPreviewEmbed.setTitle(home.getName() + " - " + away.getName());
+
+                this.matchService.createMatch(home, away, homeLeague);
+
+                matchPreviewEmbed.setDescription(":stadium: " + home.getStadium().getName());
+                matchPreviewEmbed.setImage(home.getStadium().getPhoto());
+
+                channel.sendMessage(matchPreviewEmbed);
+                msg = "";
+                break;
+            case "play":
+                try {
+                    this.matchService.playMatch(channel);
+                } catch(InterruptedException e) {
+                    msg = "Match interrompu";
+                }
+                break;
             default:
                 msg = "Commande inconnue...";
                 break;

@@ -19,4 +19,16 @@ public interface FootballPlayerRepository extends JpaRepository<FootballPlayer, 
 
     @Query(nativeQuery = true, value = "select * from football_player fp where club_id = :clubId and post = :post")
     public List<FootballPlayer> getFootballPlayersByTeamAndPost(@Param("clubId") Long clubId, @Param("post") int post);
+
+    @Query(nativeQuery = true, value = "select * from football_player fp where club_id = :clubId and post = 0 order by random() limit 1")
+    public FootballPlayer getRandomGoalkeeper(@Param("clubId") Long clubId);
+
+    @Query(nativeQuery = true, value = "select * from football_player fp where club_id = :clubId and post = 1 order by random() limit :limit")
+    public List<FootballPlayer> getRandomDefenders(@Param("clubId") Long clubId, @Param("limit") int limit);
+
+    @Query(nativeQuery = true, value = "select * from football_player fp where club_id = :clubId and post = 2 order by random() limit :limit")
+    public List<FootballPlayer> getRandomMidfielders(@Param("clubId") Long clubId, @Param("limit") int limit);
+
+    @Query(nativeQuery = true, value = "select * from football_player fp where club_id = :clubId and post = 3 order by random() limit :limit")
+    public List<FootballPlayer> getRandomAttackers(@Param("clubId") Long clubId, @Param("limit") int limit);
 }

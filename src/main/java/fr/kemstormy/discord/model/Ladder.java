@@ -1,34 +1,35 @@
 package fr.kemstormy.discord.model;
 
-import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-
 @Entity
-@Table
 @Data
-public class League {
-    
+@Table
+public class Ladder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
-    private String name;
+    @OneToOne
+    League league;
 
-    private String logo;
+    @OneToOne
+    Team team;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @Nullable
-    private League upperLeague;
+    int victories = 0;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @Nullable
-    private League lowerLeague;
+    int draws = 0;
+
+    int loses = 0;
+
+    int scoredGoals = 0;
+
+    int concededGoals = 0;
 }

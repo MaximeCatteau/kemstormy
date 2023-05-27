@@ -15,12 +15,17 @@ import org.springframework.stereotype.Service;
 import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
 import fr.kemstormy.discord.enums.EFootballPlayerPost;
 import fr.kemstormy.discord.model.FootballPlayer;
+import fr.kemstormy.discord.model.PlayerCharacteristics;
 import fr.kemstormy.discord.repository.FootballPlayerRepository;
+import fr.kemstormy.discord.repository.PlayerCharacteristicsRepository;
 
 @Service
 public class FootballPlayerService {
     @Autowired
     private FootballPlayerRepository footballPlayerRepository;
+    
+    @Autowired
+    private PlayerCharacteristicsRepository playerCharacteristicsRepository;
 
     public List<FootballPlayer> getAllFootballPlayers() {
         return this.footballPlayerRepository.findAll();
@@ -31,29 +36,61 @@ public class FootballPlayerService {
 
         List<FootballPlayer> footballPlayers = new ArrayList<>();
 
-        List<String> firstNames = Collections.emptyList();
-        List<String> lastNames = Collections.emptyList();
+        List<String> frenchFirstNames = Collections.emptyList();
+        List<String> frenchLastNames = Collections.emptyList();
+        List<String> northAfricanFirstNames = Collections.emptyList();
+        List<String> northAfricanLastNames = Collections.emptyList();
 
         Random random = new Random();
 
         try {
-            firstNames = Files.readAllLines(Paths.get("first_names\\french_first_names.txt"), StandardCharsets.UTF_8);
+            frenchFirstNames = Files.readAllLines(Paths.get("first_names\\french_first_names.txt"), StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         try {
-            lastNames = Files.readAllLines(Paths.get("last_names\\french_last_names.txt"), StandardCharsets.UTF_8);
+            frenchLastNames = Files.readAllLines(Paths.get("last_names\\french_last_names.txt"), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            northAfricanFirstNames = Files.readAllLines(Paths.get("first_names\\north_african_first_names.txt"), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            northAfricanLastNames = Files.readAllLines(Paths.get("last_names\\north_african_last_names.txt"), StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         for (int i = 0; i < 20; i++) {
             FootballPlayer newFootballPlayer = new FootballPlayer();
+            PlayerCharacteristics playerCharacteristics = new PlayerCharacteristics();
+
+            playerCharacteristics = this.playerCharacteristicsRepository.save(playerCharacteristics);
             random = new Random();
-            newFootballPlayer.setFirstName(firstNames.get(random.nextInt(firstNames.size())));
+            newFootballPlayer.setFirstName(frenchFirstNames.get(random.nextInt(frenchFirstNames.size())));
             random = new Random();
-            newFootballPlayer.setLastName(lastNames.get(random.nextInt(lastNames.size())));
+            newFootballPlayer.setLastName(frenchLastNames.get(random.nextInt(frenchLastNames.size())));
+            newFootballPlayer.setGenerationType(EFootballPlayerGenerationType.BY_BOT);
+            newFootballPlayer.setAge(18);
+            newFootballPlayer.setOwner(null);
+            newFootballPlayer.setPost(EFootballPlayerPost.randomPlayerPost());
+            newFootballPlayer.setPlayerCharacteristics(playerCharacteristics);
+
+            footballPlayers.add(newFootballPlayer);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            FootballPlayer newFootballPlayer = new FootballPlayer();
+            random = new Random();
+            newFootballPlayer.setFirstName(northAfricanFirstNames.get(random.nextInt(northAfricanFirstNames.size())));
+            random = new Random();
+            newFootballPlayer.setLastName(northAfricanLastNames.get(random.nextInt(northAfricanLastNames.size())));
             newFootballPlayer.setGenerationType(EFootballPlayerGenerationType.BY_BOT);
             newFootballPlayer.setAge(18);
             newFootballPlayer.setOwner(null);
@@ -71,6 +108,11 @@ public class FootballPlayerService {
         if(footballPlayer.getId() == null) { 
             footballPlayer.setGenerationType(EFootballPlayerGenerationType.BY_PLAYER);
         }
+
+        PlayerCharacteristics playerCharacteristics = new PlayerCharacteristics();
+        playerCharacteristics = this.playerCharacteristicsRepository.save(playerCharacteristics);
+        
+        footballPlayer.setPlayerCharacteristics(playerCharacteristics);
 
         return this.footballPlayerRepository.save(footballPlayer);
     }

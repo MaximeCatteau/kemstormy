@@ -5,6 +5,7 @@ import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
 import fr.kemstormy.discord.enums.EFootballPlayerPost;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,12 +30,19 @@ public class FootballPlayer {
     private EFootballPlayerGenerationType generationType;
 
     @Nullable
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     private DiscordUser owner;
 
     private EFootballPlayerPost post;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @Nullable
     private Team club;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private PlayerCharacteristics playerCharacteristics;
+
+    public String getMatchName() {
+        return this.getFirstName().toUpperCase().charAt(0) + ". " + this.getLastName();
+    }
 }

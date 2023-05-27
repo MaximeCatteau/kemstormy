@@ -34,6 +34,10 @@ public class TeamService {
         this.teamRepository.deleteAll();
     }
 
+    public List<Team> composeRandomMatch() {
+        return this.teamRepository.getTwoRandomTeamsForMatch();
+    }
+
     public Team handleRecruitment(FootballPlayer footballPlayer) {
         return this.teamRepository.getMatchingTeam(footballPlayer.getPost().ordinal());
     }
