@@ -1,6 +1,5 @@
 package fr.kemstormy.discord.model;
 
-import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,9 +15,11 @@ public class PlayerCharacteristics {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    int passes = 0;
+    int experience = 0;
 
-    int interceptions = 0;
+    int passes = 1;
 
-    int shots = 0;
+    int interceptions = 1;
+
+    int shots = 1;
 }

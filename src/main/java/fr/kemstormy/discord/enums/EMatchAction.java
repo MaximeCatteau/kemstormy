@@ -3,12 +3,14 @@ package fr.kemstormy.discord.enums;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.hibernate.Hibernate;
 import org.javacord.api.entity.channel.TextChannel;
 
 import fr.kemstormy.discord.model.FootballPlayer;
+import fr.kemstormy.discord.model.PlayerCharacteristics;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.resource.MatchDataResource;
 
@@ -151,6 +153,7 @@ public enum EMatchAction {
         EMatchEvent matchEvent = EMatchEvent.NOTHING;
         FootballPlayer nextFootballPlayer;
         Team playerClub = (Team) Hibernate.unproxy(resource.getPossessioner().getClub());
+        PlayerCharacteristics pc = (PlayerCharacteristics) Hibernate.unproxy(resource.getPossessioner().getPlayerCharacteristics());
 
         // Definir le joueur destinataire
         if (eligiblePlayers != null && eligiblePlayers.size() > 0) {
@@ -159,10 +162,12 @@ public enum EMatchAction {
             nextFootballPlayer = null;
         }
 
+        float actionSuccessPercentage = calculateActionSuccessProbability(resource.getPossessioner(), pc, resource.getAction(), nextFootballPlayer.getPost());
+
         switch(resource.getAction()) {
             case SHORT_PROGRESSIVE_PASS:
                 tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " effectue une passe vers " + nextFootballPlayer.getMatchName() + ".");
-                if (!actionSuccess.nextBoolean()) {
+                if (!actionSuccess(actionSuccessPercentage)) {
                     tc.sendMessage(resource.getPossessioner().getMatchName() + " rate sa passe, le ballon est perdu...");
                     matchEvent = EMatchEvent.NOTHING;
                     resource.setMatchEvent(matchEvent);
@@ -172,6 +177,8 @@ public enum EMatchAction {
                     EMatchAction nextAction = defineAction(nextFootballPlayer, false);
                     List<FootballPlayer> refreshedEligiblePlayers = getEligibleTeamMates(nextAction, allTeamPlayers, nextFootballPlayer);
 
+                    processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 1);
+
                     resource.setAction(nextAction);
                     resource.setLastPossessioner(resource.getPossessioner());
                     resource.setPossessioner(nextFootballPlayer);
@@ -180,7 +187,7 @@ public enum EMatchAction {
                 }
             case SHORT_BACK_PASS:
                 tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " effectue une passe en retrait vers " + nextFootballPlayer.getMatchName() + ".");
-                if (!actionSuccess.nextBoolean()) {
+                if (!actionSuccess(actionSuccessPercentage)) {
                     tc.sendMessage(resource.getPossessioner().getMatchName() + " rate sa passe, le ballon est perdu...");
                     matchEvent = EMatchEvent.NOTHING;
 
@@ -192,6 +199,8 @@ public enum EMatchAction {
                     EMatchAction nextAction = defineAction(nextFootballPlayer, false);
                     List<FootballPlayer> refreshedEligiblePlayers = getEligibleTeamMates(nextAction, allTeamPlayers, nextFootballPlayer);
                     
+                    processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 1);
+
                     resource.setAction(nextAction);
                     resource.setLastPossessioner(resource.getPossessioner());
                     resource.setPossessioner(nextFootballPlayer);
@@ -221,6 +230,8 @@ public enum EMatchAction {
 
                     tc.sendMessage(":boom: GOAAAAAAAAAAAAAAAAL ! But marqué par " + resource.getPossessioner().getFirstName() + " " + resource.getPossessioner().getLastName() + " (" + resource.getScoreHome() + " - " + resource.getScoreAway() + ")");
                     
+                    processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 2);
+
                     resource.setLastPossessioner(null);
                     resource.setPossessioner(null);
 
@@ -248,6 +259,8 @@ public enum EMatchAction {
 
                     resource.getScorers().add(resource.getPossessioner());
 
+                    processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 2);
+
                     tc.sendMessage(":rocket: OH LE BOMBAZOOOOOOOOOOOOOOOOO ! Quel but splendide marqué par " + resource.getPossessioner().getFirstName() + " " + resource.getPossessioner().getLastName() + " (" + resource.getScoreHome() + " - " + resource.getScoreAway() + ")");
                     
                     resource.setLastPossessioner(null);
@@ -264,75 +277,6 @@ public enum EMatchAction {
                 return resource;
         }
 
-        /*switch(action) {
-            case CLEARANCE:
-                msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " dégage le ballon loin devant.";
-                matchEvent = EMatchEvent.NOTHING;
-                break;
-            case SHORT_CLEARANCE:
-                msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " relance court.";
-                matchEvent = EMatchEvent.NOTHING;
-                break;
-            case SHORT_BACK_PASS:
-                passReceiver = homePlayers.get(randomPlayer.nextInt(homePlayers.size()));
-                msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " effectue une passe courte vers " + passReceiver.getFirstName().toUpperCase().charAt(0) +". " + passReceiver.getLastName() + ".";
-                matchEvent = EMatchEvent.NOTHING;
-                break;
-            case SHORT_PROGRESSIVE_PASS:
-                passReceiver = homePlayers.get(randomPlayer.nextInt(homePlayers.size()));
-                msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " effectue une passe courte vers " + passReceiver.getFirstName().toUpperCase().charAt(0) +". " + passReceiver.getLastName() + ".";
-                matchEvent = EMatchEvent.NOTHING;
-                break;
-            case SHORT_SHOT:
-                if (actionSuccess.nextBoolean()) {
-                    msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " pénètre dans la surface, frappe et marque !";
-                    if (player.getClub().getId() == homeTeam.getId()) {
-                        matchEvent = EMatchEvent.GOAL_HOME;
-                    } else {
-                        matchEvent = EMatchEvent.GOAL_AWAY;
-                    }
-                    break;
-                } else {
-                    msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " pénètre dans la surface, frappe mais le gardien adverse stoppe sa tentative !";
-                    break;
-                }
-            case LONG_SHOT:
-                if (actionSuccess.nextBoolean()) {
-                    msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " prend sa chance de loin et marque ! BOMBAZOOOOO ! :rocket:";
-                    if (player.getClub().getId() == homeTeam.getId()) {
-                        matchEvent = EMatchEvent.GOAL_HOME;
-                    } else {
-                        matchEvent = EMatchEvent.GOAL_AWAY;
-                    }
-                    break;
-                } else {
-                    msg = minute + "' - " + player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " tente sa chance de loin ! C'est raté...";
-                    break;
-                }
-            case PENALTY:
-                Team team = player.getClub();
-                msg = minute + "' - Penalty pour " + team.getName() + " !\n";
-                if (actionSuccess.nextBoolean()) {
-                    msg += player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " s'élance et trompe le gardien !!!";
-                    if (player.getClub().getId() == homeTeam.getId()) {
-                        matchEvent = EMatchEvent.GOAL_HOME;
-                    } else {
-                        matchEvent = EMatchEvent.GOAL_AWAY;
-                    }
-                    break;
-                } else {
-                    msg += player.getFirstName().toUpperCase().charAt(0) + ". " + player.getLastName() + " s'élance mais manque complètement son geste !";
-                    break;
-                }
-            case DIRECT_FREEKICK:
-            case INDIRECT_FREEKICK:
-                msg = minute + "' - Coup franc en faveur de " + homeTeam.getName();
-                break;
-            default:
-                msg = minute + "' - L'action se poursuit.";
-                break;
-        }
-        */
         tc.sendMessage(msg);
 
         return resource;
@@ -380,5 +324,69 @@ public enum EMatchAction {
         }
 
         return eligible;
+    }
+
+    public static float calculateActionSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha, EMatchAction action, EFootballPlayerPost receiverPost) {
+        float chances = 0;
+
+        switch(action) {
+            case SHORT_BACK_PASS:
+            case SHORT_PROGRESSIVE_PASS:
+                calculatePassSuccessProbability(fp, cha, receiverPost);
+                break;
+            case SHORT_SHOT:
+                break;
+            case LONG_SHOT:
+                break;
+            default:
+                break;
+        }
+
+        return chances;
+    }
+
+    public static float calculatePassSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha, EFootballPlayerPost receiverPost) {
+        float chances = 0;
+
+        int passes = cha.getPasses();
+
+        if (EFootballPlayerPost.GOALKEEPER.equals(fp.getPost())) {
+            chances = (float) Math.min((1/passes)+0.02, 0.25);
+        } else if (EFootballPlayerPost.DEFENDER.equals(fp.getPost())) {
+            if (EFootballPlayerPost.GOALKEEPER.equals(receiverPost) || EFootballPlayerPost.DEFENDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.02, 0.25);
+            } else if (EFootballPlayerPost.MIDFIELDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.05, 0.30);
+            }
+        } else if (EFootballPlayerPost.MIDFIELDER.equals(fp.getPost())) {
+            if (EFootballPlayerPost.DEFENDER.equals(receiverPost) || EFootballPlayerPost.MIDFIELDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.1, 0.25);
+            } else if (EFootballPlayerPost.FORWARD.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.25, 0.75);
+            }
+        } else {
+            if (EFootballPlayerPost.MIDFIELDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.1, 0.25);
+            } else if (EFootballPlayerPost.FORWARD.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.25, 0.75);
+            }
+        }
+
+        chances *= 100;
+        chances = 100 - chances;
+
+        System.out.println(fp.getMatchName() + " a " + chances + "% de chances de réussir sa passe");
+
+        return chances;    
+    }
+
+    public static boolean actionSuccess(float probability) {
+        Random p = new Random();
+
+        return p.nextFloat() < probability;
+    }
+
+    public static void processMatchXpTable(Map<Long, Integer> matchXpTable, Long possessionnerId, int earnedXp) {
+        matchXpTable.put(possessionnerId, matchXpTable.get(possessionnerId) + earnedXp);
     }
 }

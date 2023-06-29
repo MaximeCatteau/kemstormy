@@ -1,11 +1,15 @@
 package fr.kemstormy.discord.service;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -26,6 +30,8 @@ import fr.kemstormy.discord.model.League;
 import fr.kemstormy.discord.model.Match;
 import fr.kemstormy.discord.model.MatchDecisivePasser;
 import fr.kemstormy.discord.model.MatchStriker;
+import fr.kemstormy.discord.model.PlayerCharacteristics;
+import fr.kemstormy.discord.model.Stadium;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.model.Week;
 import fr.kemstormy.discord.repository.FootballPlayerRepository;
@@ -33,8 +39,11 @@ import fr.kemstormy.discord.repository.LadderRepository;
 import fr.kemstormy.discord.repository.MatchDecisivePasserRepository;
 import fr.kemstormy.discord.repository.MatchRepository;
 import fr.kemstormy.discord.repository.MatchStrikerRepository;
+import fr.kemstormy.discord.repository.PlayerCharacteristicsRepository;
+import fr.kemstormy.discord.repository.StadiumRepository;
 import fr.kemstormy.discord.repository.TeamRepository;
 import fr.kemstormy.discord.resource.MatchDataResource;
+import fr.kemstormy.discord.resource.XpData;
 
 @Service
 public class MatchService {
@@ -56,6 +65,12 @@ public class MatchService {
     @Autowired
     private MatchDecisivePasserRepository matchDecisivePasserRepository;
 
+    @Autowired
+    private StadiumRepository stadiumRepository;
+
+    @Autowired
+    private PlayerCharacteristicsRepository playerCharacteristicsRepository;
+
     public Match createMatch(Team home, Team away, League league) {
         Match m = new Match();
 
@@ -71,7 +86,7 @@ public class MatchService {
         return this.matchRepository.save(m);
     }
 
-    public void playMatch(TextChannel channel) throws InterruptedException {
+    public void playMatch(TextChannel channel) throws InterruptedException, IOException {
         Match m = this.matchRepository.getNextMatchToPlay();
         Random timeRandomOffset = new Random();
         Random randomPlayer = new Random();
@@ -86,6 +101,8 @@ public class MatchService {
 
         Ladder homeLadder = this.ladderRepository.getByLeagueAndTeam(homeTeam.getLeague().getId(), homeTeam.getId());
         Ladder awayLadder = this.ladderRepository.getByLeagueAndTeam(awayTeam.getLeague().getId(), awayTeam.getId());
+
+        Stadium homeTeamStadium = (Stadium) Hibernate.unproxy(homeTeam.getStadium());
 
         m.setStatus(EMatchStatus.IN_PROGRESS);
         this.matchRepository.save(m);
@@ -115,6 +132,7 @@ public class MatchService {
         matchData.setScoreAway(0);
         matchData.setAction(firstAction);
         matchData.setPossessioner(possessioner);
+        matchData.setMatchXpTable(this.initializeMatchDataTable(startingHome, startingAway));
 
         channel.sendMessage("Début du match entre " + homeTeam.getName() + " et " + awayTeam.getName() + " (" + homeTeam.getStadium().getName() + ") !");
 
@@ -192,6 +210,14 @@ public class MatchService {
         this.matchDecisivePasserRepository.saveAll(decisivePassersToAdd);
 
         System.out.println("Fin du match");
+
+        if (matchData.getScoreHome() > matchData.getScoreAway()) {
+            this.processStadiumXp(homeTeamStadium, 3, channel);
+        } else if (matchData.getScoreHome() == matchData.getScoreAway()) {
+            this.processStadiumXp(homeTeamStadium, 1, channel);
+        }
+
+        this.processXpPlayers(matchData.getMatchXpTable());
 
         this.matchRepository.save(m);
     }
@@ -345,4 +371,71 @@ public class MatchService {
 			}
 		}
 	}
+
+    private void processStadiumXp(Stadium stadium, int experienceEarned, TextChannel tc) throws IOException {
+        int currentLvl = stadium.getLevel();
+        int experience = stadium.getExperience();
+        XpData xpData = new XpData();
+
+        if (xpData.willStadiumUp(stadium, experienceEarned)) {
+            tc.sendMessage("Le stade **" + stadium.getName() + "** passe au niveau " + (currentLvl+1) + ".");
+
+            stadium.setLevel(currentLvl + 1);
+            stadium.setCapacity(stadium.getCapacity() + 1000);
+        }
+
+        experience += experienceEarned;
+
+        stadium.setExperience(experience);
+
+        this.stadiumRepository.save(stadium);
+    }
+
+    private void processXpPlayers(Map<Long, Integer> xpDataTable) {
+        List<FootballPlayer> players = new ArrayList<>();
+        XpData xpData = new XpData();
+
+        for (var entry : xpDataTable.entrySet()) {
+            if (entry.getValue() > 0) {
+                FootballPlayer fp = this.footballPlayerRepository.findById(entry.getKey()).orElseThrow();
+                PlayerCharacteristics pc = fp.getPlayerCharacteristics();
+
+                int currentLvl = fp.getLevel();
+                int experience = pc.getExperience();
+
+                try {
+                    if (xpData.willPlayerUp(fp, experience)) {
+                        fp.setLevel(currentLvl + 1);
+                    }
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+                experience += entry.getValue();
+
+                pc.setExperience(experience);
+
+                this.playerCharacteristicsRepository.save(pc);
+
+                players.add(fp);
+            }
+        }
+
+        this.footballPlayerRepository.saveAll(players);
+    }
+
+    private Map<Long, Integer> initializeMatchDataTable(List<FootballPlayer> startingHome, List<FootballPlayer> startingAway) {
+        Map<Long, Integer> map = new HashMap<>();
+
+        for (FootballPlayer hFP : startingHome) {
+            map.put(hFP.getId(), 0);
+        }
+
+        for (FootballPlayer aFP : startingAway) {
+            map.put(aFP.getId(), 0);
+        }
+
+        return map;
+    }
 }

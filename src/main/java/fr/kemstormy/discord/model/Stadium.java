@@ -1,5 +1,6 @@
 package fr.kemstormy.discord.model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,4 +21,8 @@ public class Stadium {
     private String photo;
 
     private int capacity;
+
+    private int level = 1;
+
+    private int experience = 0;
 }

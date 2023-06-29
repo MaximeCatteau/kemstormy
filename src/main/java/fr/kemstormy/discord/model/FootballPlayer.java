@@ -42,6 +42,12 @@ public class FootballPlayer {
     @OneToOne(fetch = FetchType.LAZY)
     private PlayerCharacteristics playerCharacteristics;
 
+    @Nullable
+    private Integer level = 1;
+
+    @Nullable
+    private Integer pointsToSet = 0;
+
     public String getMatchName() {
         return this.getFirstName().toUpperCase().charAt(0) + ". " + this.getLastName();
     }

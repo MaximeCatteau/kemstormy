@@ -2,6 +2,7 @@ package fr.kemstormy.discord.utils;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,11 +54,14 @@ public class DiscordUtils {
         this.matchService = matchService;
     }
 
-    public String getCommand(String command, User messageAuthor, MessageCreateEvent event) throws InterruptedException {
+    public String getCommand(String command, User messageAuthor, MessageCreateEvent event) throws InterruptedException, IOException {
         List<String> commands = this.removeCommandDiscriminator(command);
         String mainCommand = commands.get(0);
         String msg = "";
         TextChannel channel = event.getChannel();
+        String leagueName = "";
+        List<Team> leagueTeams = new ArrayList<>();
+        League league;
 
         switch (mainCommand) {
             case "register":
@@ -170,7 +174,7 @@ public class DiscordUtils {
                 embed.addField("Milieux", mid);
                 embed.addField("Attaquants", atck);
 
-                embed.setDescription(":stadium: " + t.getStadium().getName() + "(" + t.getStadium().getCapacity() + ")" );
+                embed.setDescription(":stadium: " + t.getStadium().getName() + " (*Niveau : " + t.getStadium().getLevel() + " - " + t.getStadium().getCapacity() + " places*)" );
                 embed.setImage(t.getStadium().getPhoto());
 
                 channel.sendMessage(embed);
@@ -186,20 +190,20 @@ public class DiscordUtils {
 
                 List<String> copyLeagueCommands = new ArrayList(commands);
 
-                String leagueName = copyLeagueCommands.get(1);
+                leagueName = copyLeagueCommands.get(1);
 
                 if (commands.size() > 2) {
                     copyLeagueCommands.remove(0);
                     leagueName = copyLeagueCommands.stream().collect(Collectors.joining(" "));
                 }
 
-                League league = this.leagueService.getLeagueByName(leagueName);
+                league = this.leagueService.getLeagueByName(leagueName);
                 if (league == null) {
                     msg = "Championnat inconnu";
                     break;
                 }
 
-                List<Team> leagueTeams = this.teamService.getLeagueTeams(league.getId());
+                leagueTeams = this.teamService.getLeagueTeams(league.getId());
 
                 EmbedBuilder leagueEmbed = new EmbedBuilder();
                 leagueEmbed.setTitle(league.getName());
@@ -281,7 +285,26 @@ public class DiscordUtils {
                     this.matchService.playMatch(channel);
                 } catch(InterruptedException e) {
                     msg = "Match interrompu";
+                } catch (FileNotFoundException e) {
+                    msg = "Fichier non trouvé";
                 }
+                break;
+            case "ladder":
+                List<String> copyLadderCommands = new ArrayList(commands);
+                leagueName = copyLadderCommands.get(1);
+
+                if (commands.size() > 2) {
+                    copyLadderCommands.remove(0);
+                    leagueName = copyLadderCommands.stream().collect(Collectors.joining(" "));
+                }
+
+                league = this.leagueService.getLeagueByName(leagueName);
+                if (league == null) {
+                    msg = "Championnat inconnu";
+                    break;
+                }
+
+                leagueTeams = this.teamService.getLeagueTeams(league.getId());
                 break;
             default:
                 msg = "Commande inconnue...";

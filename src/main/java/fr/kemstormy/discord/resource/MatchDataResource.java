@@ -1,7 +1,9 @@
 package fr.kemstormy.discord.resource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import fr.kemstormy.discord.enums.EMatchAction;
 import fr.kemstormy.discord.enums.EMatchEvent;
@@ -35,4 +37,6 @@ public class MatchDataResource {
     private EMatchEvent matchEvent;
 
     private EMatchAction action;
+
+    private Map<Long, Integer> matchXpTable = new HashMap<>();
 }
