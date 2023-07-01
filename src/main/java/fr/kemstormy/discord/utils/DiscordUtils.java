@@ -127,13 +127,11 @@ public class DiscordUtils {
 
                 int playerExp = findingPlayer.getPlayerCharacteristics().getExperience();
                 int playerAge = findingPlayer.getAge();
-                int playerPlayedGames = 0;
                 int playerScoredGoals = this.matchStrikerService.getScoredGoalsForPlayer(findingPlayer.getId());
                 int playerAssists = this.matchDecisivePassersService.getAssistsForPlayer(findingPlayer.getId());
 
                 embed.addField("Expérience", "" + playerExp);
                 embed.addField("Âge", "" + playerAge);
-                embed.addField("Matchs joués", "" + playerPlayedGames);
                 embed.addField("Buts marqués", "" + playerScoredGoals);
                 embed.addField("Passes décisives", "" + playerAssists);
 
