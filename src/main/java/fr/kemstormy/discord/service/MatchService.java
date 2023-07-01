@@ -1,5 +1,6 @@
 package fr.kemstormy.discord.service;
 
+import java.awt.Color;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
@@ -252,8 +253,10 @@ public class MatchService {
 
         if (isHomeTeam) {
             embed.setThumbnail(team.getHomeJersey());
+            embed.setColor(this.convertHexToColor(team.getMainColor()));
         } else {
             embed.setThumbnail(team.getAwayJersey());
+            embed.setColor(this.convertHexToColor(team.getSecondaryColor()));
         }
 
         tc.sendMessage(embed);
@@ -439,5 +442,14 @@ public class MatchService {
         }
 
         return map;
+    }
+
+    private Color convertHexToColor(String hex) {
+        int r = Integer.valueOf(hex.substring(1, 3), 16);
+        int g = Integer.valueOf(hex.substring(3, 5), 16);
+        int b = Integer.valueOf(hex.substring(5, 7), 16);
+        Color color = new Color(r, g, b);
+
+        return color;
     }
 }

@@ -1,5 +1,6 @@
 package fr.kemstormy.discord.utils;
 
+import java.awt.Color;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -166,6 +167,7 @@ public class DiscordUtils {
 
                 embed.setTitle(t.getName());
                 embed.setThumbnail(t.getLogo());
+                embed.setColor(this.convertHexToColor(t.getMainColor()));
 
                 String gk = "";
                 String df = "";
@@ -386,5 +388,14 @@ public class DiscordUtils {
         }
 
         return teams;
+    }
+
+    private Color convertHexToColor(String hex) {
+        int r = Integer.valueOf(hex.substring(1, 3), 16);
+        int g = Integer.valueOf(hex.substring(3, 5), 16);
+        int b = Integer.valueOf(hex.substring(5, 7), 16);
+        Color color = new Color(r, g, b);
+
+        return color;
     }
 }
