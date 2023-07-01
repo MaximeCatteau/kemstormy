@@ -24,12 +24,18 @@ import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
 import fr.kemstormy.discord.enums.EFootballPlayerPost;
 import fr.kemstormy.discord.model.DiscordUser;
 import fr.kemstormy.discord.model.FootballPlayer;
+import fr.kemstormy.discord.model.Ladder;
 import fr.kemstormy.discord.model.League;
 import fr.kemstormy.discord.model.Team;
+import fr.kemstormy.discord.resource.PasserLadderResource;
+import fr.kemstormy.discord.resource.StrikerLadderResource;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
+import fr.kemstormy.discord.service.LadderService;
 import fr.kemstormy.discord.service.LeagueService;
+import fr.kemstormy.discord.service.MatchDecisivePassersService;
 import fr.kemstormy.discord.service.MatchService;
+import fr.kemstormy.discord.service.MatchStrikerService;
 import fr.kemstormy.discord.service.TeamService;
 import lombok.Data;
 import net.minidev.json.JSONArray;
@@ -45,13 +51,19 @@ public class DiscordUtils {
     private TeamService teamService;
     private LeagueService leagueService;
     private MatchService matchService;
+    private LadderService ladderService;
+    private MatchStrikerService matchStrikerService;
+    private MatchDecisivePassersService matchDecisivePassersService;
 
-    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy MatchService matchService, @Lazy LeagueService leagueService) {
+    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy MatchService matchService, @Lazy LeagueService leagueService, @Lazy LadderService ladderService, @Lazy MatchStrikerService matchStrikerService, @Lazy MatchDecisivePassersService matchDecisivePassersService) {
         this.discordUserService = discordUserService;
         this.footballPlayerService = footballPlayerService;
         this.teamService = teamService;
         this.leagueService = leagueService;
         this.matchService = matchService;
+        this.ladderService = ladderService;
+        this.matchStrikerService = matchStrikerService;
+        this.matchDecisivePassersService = matchDecisivePassersService;
     }
 
     public String getCommand(String command, User messageAuthor, MessageCreateEvent event) throws InterruptedException, IOException {
@@ -96,6 +108,13 @@ public class DiscordUtils {
                 }
                 FootballPlayer createdFootballPlayer = new FootballPlayer();
                 DiscordUser discordUser = this.discordUserService.getByDiscordId(messageAuthor.getIdAsString());
+
+                FootballPlayer existing = this.footballPlayerService.findByOwnerId(discordUser.getId());
+
+                if (existing != null) {
+                    msg = "Vous avez déjà un joueur créé (" + existing.getMatchName() + ").";
+                    break;
+                }
 
                 createdFootballPlayer.setAge(18);
                 createdFootballPlayer.setFirstName(commands.get(1));
@@ -305,6 +324,38 @@ public class DiscordUtils {
                 }
 
                 leagueTeams = this.teamService.getLeagueTeams(league.getId());
+
+                List<Ladder> ladder = this.ladderService.getLaddersByLeague(league.getId());
+
+                channel.sendMessage(this.ladderService.createEmbedLadder(ladder, league.getId()));
+                break;
+            case "strikers":
+                List<String> copyStrikersCommands = new ArrayList(commands);
+                leagueName = copyStrikersCommands.get(1);
+
+                if (commands.size() > 2) {
+                    copyStrikersCommands.remove(0);
+                    leagueName = copyStrikersCommands.stream().collect(Collectors.joining(" "));
+                }
+
+                league = this.leagueService.getLeagueByName(leagueName);
+                List<StrikerLadderResource> strikers = this.matchStrikerService.getStrikersLadder(league.getId());
+
+                channel.sendMessage(this.matchStrikerService.createEmbedStrikersLadder(strikers, league.getId()));
+                break;
+            case "passers":
+                List<String> copyPassersCommands = new ArrayList(commands);
+                leagueName = copyPassersCommands.get(1);
+
+                if (commands.size() > 2) {
+                    copyPassersCommands.remove(0);
+                    leagueName = copyPassersCommands.stream().collect(Collectors.joining(" "));
+                }
+
+                league = this.leagueService.getLeagueByName(leagueName);
+                List<PasserLadderResource> passers = this.matchDecisivePassersService.getDecisivePassersLadder(league.getId());
+
+                channel.sendMessage(this.matchDecisivePassersService.createEmbedDecisivePassersLadder(passers, league.getId()));
                 break;
             default:
                 msg = "Commande inconnue...";

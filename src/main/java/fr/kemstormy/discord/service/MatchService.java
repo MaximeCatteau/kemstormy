@@ -217,7 +217,7 @@ public class MatchService {
             this.processStadiumXp(homeTeamStadium, 1, channel);
         }
 
-        this.processXpPlayers(matchData.getMatchXpTable());
+        this.processXpPlayers(matchData.getMatchXpTable(), channel);
 
         this.matchRepository.save(m);
     }
@@ -391,7 +391,7 @@ public class MatchService {
         this.stadiumRepository.save(stadium);
     }
 
-    private void processXpPlayers(Map<Long, Integer> xpDataTable) {
+    private void processXpPlayers(Map<Long, Integer> xpDataTable, TextChannel channel) {
         List<FootballPlayer> players = new ArrayList<>();
         XpData xpData = new XpData();
 
@@ -405,6 +405,8 @@ public class MatchService {
 
                 try {
                     if (xpData.willPlayerUp(fp, experience)) {
+                        channel.sendMessage("**" + fp.getFirstName() + " " + fp.getLastName() + "** passe au niveau " + (currentLvl + 1));
+                        fp.setPointsToSet(fp.getPointsToSet() + 1);
                         fp.setLevel(currentLvl + 1);
                     }
                 } catch (IOException e) {

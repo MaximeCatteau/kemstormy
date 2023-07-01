@@ -209,7 +209,7 @@ public enum EMatchAction {
                 }
             case SHORT_SHOT:
                 tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " est en bonne position pour frapper, il tente sa chance...");
-                if (!actionSuccess.nextBoolean()) {
+                if (!actionSuccess(actionSuccessPercentage)) {
                     tc.sendMessage("... et c'est raté, le ballon est perdu... :x:");
                     matchEvent = EMatchEvent.NOTHING;
                     resource.setLastPossessioner(null);
@@ -239,7 +239,7 @@ public enum EMatchAction {
                 }
             case LONG_SHOT:
                 tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " tente sa chance de loin...");
-                if (!actionSuccess.nextBoolean()) {
+                if (!actionSuccess(actionSuccessPercentage)) {
                     tc.sendMessage("... et c'est raté. Il n'avait presque aucune chance de marquer à cette distance... :x:");
                     matchEvent = EMatchEvent.NOTHING;
                     resource.setMatchEvent(matchEvent);
@@ -332,11 +332,13 @@ public enum EMatchAction {
         switch(action) {
             case SHORT_BACK_PASS:
             case SHORT_PROGRESSIVE_PASS:
-                calculatePassSuccessProbability(fp, cha, receiverPost);
+                chances = calculatePassSuccessProbability(fp, cha, receiverPost);
                 break;
             case SHORT_SHOT:
+                chances = calculateShotSuccessProbability(fp, cha);
                 break;
             case LONG_SHOT:
+                chances = calculateLongShotSuccessProbability(fp, cha);
                 break;
             default:
                 break;
@@ -380,10 +382,51 @@ public enum EMatchAction {
         return chances;    
     }
 
+    public static float calculateShotSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha) {
+        double chances = 0;
+        int shots = cha.getShots();
+        double threshold = 0.075;
+        double basis = 0.25;
+
+        chances = (1 / (1 + Math.exp(-threshold * shots))) - basis;
+
+        chances *= 100;
+
+        System.out.println(fp.getMatchName() + " a " + chances + "% de chances de réussir son tir");
+
+        return (float) chances;
+    }
+
+    public static float calculateLongShotSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha) {
+        double chances = 0;
+        int longShots = cha.getLongShots();
+        double threshold = 0.075;
+        double basis = 0.75;
+        EFootballPlayerPost post = fp.getPost();
+
+        if (EFootballPlayerPost.MIDFIELDER.equals(post)) {
+            basis = 0.6;
+        } else if (EFootballPlayerPost.FORWARD.equals(post)) {
+            basis = 0.5;
+        }
+
+        chances = (1 / (1 + Math.exp(-threshold * longShots))) - basis;
+
+        chances = chances > 0 ? chances : 0;
+
+        chances *= 100;
+
+        System.out.println(fp.getMatchName() + " a " + chances + "% de chances de réussir son tir de loin");
+
+        return (float) chances;
+    }
+
     public static boolean actionSuccess(float probability) {
         Random p = new Random();
 
-        return p.nextFloat() < probability;
+        float rand = p.nextFloat();
+
+        return rand < probability;
     }
 
     public static void processMatchXpTable(Map<Long, Integer> matchXpTable, Long possessionnerId, int earnedXp) {

@@ -31,4 +31,7 @@ public interface FootballPlayerRepository extends JpaRepository<FootballPlayer, 
 
     @Query(nativeQuery = true, value = "select * from football_player fp where club_id = :clubId and post = 3 order by random() limit :limit")
     public List<FootballPlayer> getRandomAttackers(@Param("clubId") Long clubId, @Param("limit") int limit);
+
+    @Query(nativeQuery = true, value = "select * from football_player fp where owner_id = :ownerId and generation_type = 1")
+    public FootballPlayer findByOwnerId(@Param("ownerId") Long ownerId);
 }

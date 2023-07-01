@@ -128,4 +128,8 @@ public class FootballPlayerService {
     public List<FootballPlayer> getFootballPlayersByTeamAndPost(Long clubId, EFootballPlayerPost post) {
         return this.footballPlayerRepository.getFootballPlayersByTeamAndPost(clubId, post.ordinal());
     }
+
+    public FootballPlayer findByOwnerId(Long ownerId) {
+        return this.footballPlayerRepository.findByOwnerId(ownerId);
+    }
 }

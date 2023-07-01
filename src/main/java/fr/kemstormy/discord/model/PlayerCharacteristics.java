@@ -1,5 +1,6 @@
 package fr.kemstormy.discord.model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,4 +23,6 @@ public class PlayerCharacteristics {
     int interceptions = 1;
 
     int shots = 1;
+
+    int longShots = 1;
 }

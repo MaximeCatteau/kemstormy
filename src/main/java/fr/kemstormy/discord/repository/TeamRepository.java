@@ -11,7 +11,7 @@ import fr.kemstormy.discord.model.Team;
 
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
-    @Query(nativeQuery = true, value = "select * from team where lower(name) = :name")
+    @Query(nativeQuery = true, value = "select * from team where lower(name) = lower(:name)")
     public Team findByTeamName(@Param("name") String name);
 
     @Query(nativeQuery = true, value = "select * from team t where quota_defenders > (select count(*) from football_player fp where club_id = t.id and post = :post) order by random() limit 1")

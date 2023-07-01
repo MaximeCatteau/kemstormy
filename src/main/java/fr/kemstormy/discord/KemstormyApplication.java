@@ -31,8 +31,11 @@ import fr.kemstormy.discord.model.FootballPlayer;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.service.DiscordUserService;
 import fr.kemstormy.discord.service.FootballPlayerService;
+import fr.kemstormy.discord.service.LadderService;
 import fr.kemstormy.discord.service.LeagueService;
+import fr.kemstormy.discord.service.MatchDecisivePassersService;
 import fr.kemstormy.discord.service.MatchService;
+import fr.kemstormy.discord.service.MatchStrikerService;
 import fr.kemstormy.discord.service.TeamService;
 import fr.kemstormy.discord.utils.DiscordUtils;
 
@@ -52,8 +55,11 @@ public class KemstormyApplication {
 		TeamService teamService = applicationContext.getBean(TeamService.class);
 		LeagueService leagueService = applicationContext.getBean(LeagueService.class);
 		MatchService matchService = applicationContext.getBean(MatchService.class);
+		LadderService ladderService = applicationContext.getBean(LadderService.class);
+		MatchStrikerService matchStrikerService = applicationContext.getBean(MatchStrikerService.class);
+		MatchDecisivePassersService matchDecisivePassersService = applicationContext.getBean(MatchDecisivePassersService.class);
 
-		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService, matchService, leagueService);
+		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService, matchService, leagueService, ladderService, matchStrikerService, matchDecisivePassersService);
 		DiscordApi api = new DiscordApiBuilder()
 			.setToken(TOKEN)
 			.addIntents(Intent.MESSAGE_CONTENT)
