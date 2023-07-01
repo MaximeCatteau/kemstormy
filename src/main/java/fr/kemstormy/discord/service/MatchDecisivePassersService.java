@@ -29,10 +29,8 @@ import fr.kemstormy.discord.model.League;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.repository.LeagueRepository;
 import fr.kemstormy.discord.repository.MatchDecisivePasserRepository;
-import fr.kemstormy.discord.repository.MatchStrikerRepository;
 import fr.kemstormy.discord.repository.TeamRepository;
 import fr.kemstormy.discord.resource.PasserLadderResource;
-import fr.kemstormy.discord.resource.StrikerLadderResource;
 import jakarta.persistence.Tuple;
 
 @Service
@@ -45,6 +43,10 @@ public class MatchDecisivePassersService {
 
     @Autowired
     private TeamRepository teamRepository;
+
+    public int getAssistsForPlayer(Long playerId) {
+        return this.matchDecisivePasserRepository.countAssistsByPlayer(playerId);
+    }
 
     public List<PasserLadderResource> getDecisivePassersLadder(Long leagueId) {
         List<Tuple> tuples = this.matchDecisivePasserRepository.getDecisivePassersLadder(leagueId);

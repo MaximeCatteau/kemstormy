@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fr.kemstormy.discord.model.League;
+import fr.kemstormy.discord.model.MatchStriker;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.repository.LeagueRepository;
 import fr.kemstormy.discord.repository.MatchStrikerRepository;
@@ -43,6 +44,10 @@ public class MatchStrikerService {
 
     @Autowired
     private TeamRepository teamRepository;
+
+    public int getScoredGoalsForPlayer(Long footballPlayerId) {
+        return this.matchStrikerRepository.countScoredGoalsByPlayer(footballPlayerId);
+    }
 
     public List<StrikerLadderResource> getStrikersLadder(Long leagueId) {
         List<Tuple> tuples = this.matchStrikerRepository.getStrikersLadder(leagueId);

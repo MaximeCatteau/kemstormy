@@ -34,4 +34,7 @@ public interface FootballPlayerRepository extends JpaRepository<FootballPlayer, 
 
     @Query(nativeQuery = true, value = "select * from football_player fp where owner_id = :ownerId and generation_type = 1")
     public FootballPlayer findByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Query(nativeQuery = true, value = "select * from football_player fp where lower(unaccent(first_name)) = lower(:firstName) and lower(unaccent(last_name)) = lower(unaccent(:lastName));")
+    public FootballPlayer findByFirstNameAndLastName(@Param("firstName") String firstName, @Param("lastName") String lastName);
 }

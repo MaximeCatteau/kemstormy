@@ -132,4 +132,8 @@ public class FootballPlayerService {
     public FootballPlayer findByOwnerId(Long ownerId) {
         return this.footballPlayerRepository.findByOwnerId(ownerId);
     }
+
+    public FootballPlayer findByFirstNameAndLastName(String firstName, String lastName) {
+        return this.footballPlayerRepository.findByFirstNameAndLastName(firstName, lastName);
+    }
 }

@@ -75,6 +75,7 @@ public class DiscordUtils {
         String leagueName = "";
         List<Team> leagueTeams = new ArrayList<>();
         League league;
+        EmbedBuilder embed = new EmbedBuilder();
 
         switch (mainCommand) {
             case "register":
@@ -86,7 +87,6 @@ public class DiscordUtils {
                 msg = "Compte enregistré :white_check_mark:";
                 break;
             case "players":
-                msg = "";
                 List<FootballPlayer> fp = this.footballPlayerService.getAllFootballPlayers();
 
                 msg += "Il y a actuellement " + fp.size() + " joueurs enregistrés.\n";
@@ -101,6 +101,43 @@ public class DiscordUtils {
                     }
                 }
 
+                break;
+            case "player":
+                List<String> copyPlayerCommands = new ArrayList(commands);
+
+                if (commands.size() < 3) {
+                    msg = "Mauvaise commande, utilisez !player prenom nom";
+                    break;
+                }
+
+                String playerFirstname = commands.get(1);
+                String playerLastname = commands.get(2);
+
+                FootballPlayer findingPlayer = this.footballPlayerService.findByFirstNameAndLastName(playerFirstname, playerLastname);
+
+                if (findingPlayer == null) {
+                    msg = "Ce joueur n'existe pas.";
+                    break;
+                }
+
+                embed.setTitle(findingPlayer.getFirstName() + " " + findingPlayer.getLastName() + " - Niveau " + findingPlayer.getLevel());
+                embed.setThumbnail(findingPlayer.getClub().getLogo());
+                embed.setDescription(findingPlayer.getClub().getName());
+                embed.setColor(this.convertHexToColor(findingPlayer.getClub().getMainColor()));
+
+                int playerExp = findingPlayer.getPlayerCharacteristics().getExperience();
+                int playerAge = findingPlayer.getAge();
+                int playerPlayedGames = 0;
+                int playerScoredGoals = this.matchStrikerService.getScoredGoalsForPlayer(findingPlayer.getId());
+                int playerAssists = this.matchDecisivePassersService.getAssistsForPlayer(findingPlayer.getId());
+
+                embed.addField("Expérience", "" + playerExp);
+                embed.addField("Âge", "" + playerAge);
+                embed.addField("Matchs joués", "" + playerPlayedGames);
+                embed.addField("Buts marqués", "" + playerScoredGoals);
+                embed.addField("Passes décisives", "" + playerAssists);
+
+                channel.sendMessage(embed);
                 break;
             case "create":
                 if (commands.size() != 4) {
@@ -162,8 +199,6 @@ public class DiscordUtils {
                 List<FootballPlayer> defenders = this.footballPlayerService.getFootballPlayersByTeamAndPost(t.getId(), EFootballPlayerPost.DEFENDER);
                 List<FootballPlayer> midfielders = this.footballPlayerService.getFootballPlayersByTeamAndPost(t.getId(), EFootballPlayerPost.MIDFIELDER);
                 List<FootballPlayer> forwards = this.footballPlayerService.getFootballPlayersByTeamAndPost(t.getId(), EFootballPlayerPost.FORWARD);
-
-                EmbedBuilder embed = new EmbedBuilder();
 
                 embed.setTitle(t.getName());
                 embed.setThumbnail(t.getLogo());
