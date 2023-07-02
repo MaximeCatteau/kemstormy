@@ -27,7 +27,9 @@ import fr.kemstormy.discord.model.DiscordUser;
 import fr.kemstormy.discord.model.FootballPlayer;
 import fr.kemstormy.discord.model.Ladder;
 import fr.kemstormy.discord.model.League;
+import fr.kemstormy.discord.model.PlayerRecord;
 import fr.kemstormy.discord.model.Team;
+import fr.kemstormy.discord.model.TeamRecord;
 import fr.kemstormy.discord.resource.PasserLadderResource;
 import fr.kemstormy.discord.resource.StrikerLadderResource;
 import fr.kemstormy.discord.service.DiscordUserService;
@@ -37,6 +39,8 @@ import fr.kemstormy.discord.service.LeagueService;
 import fr.kemstormy.discord.service.MatchDecisivePassersService;
 import fr.kemstormy.discord.service.MatchService;
 import fr.kemstormy.discord.service.MatchStrikerService;
+import fr.kemstormy.discord.service.PlayerRecordService;
+import fr.kemstormy.discord.service.TeamRecordService;
 import fr.kemstormy.discord.service.TeamService;
 import lombok.Data;
 import net.minidev.json.JSONArray;
@@ -55,8 +59,10 @@ public class DiscordUtils {
     private LadderService ladderService;
     private MatchStrikerService matchStrikerService;
     private MatchDecisivePassersService matchDecisivePassersService;
+    private TeamRecordService teamRecordService;
+    private PlayerRecordService playerRecordService;
 
-    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy MatchService matchService, @Lazy LeagueService leagueService, @Lazy LadderService ladderService, @Lazy MatchStrikerService matchStrikerService, @Lazy MatchDecisivePassersService matchDecisivePassersService) {
+    public DiscordUtils(@Lazy DiscordUserService discordUserService, @Lazy FootballPlayerService footballPlayerService, @Lazy TeamService teamService, @Lazy MatchService matchService, @Lazy LeagueService leagueService, @Lazy LadderService ladderService, @Lazy MatchStrikerService matchStrikerService, @Lazy MatchDecisivePassersService matchDecisivePassersService, @Lazy TeamRecordService teamRecordService, @Lazy PlayerRecordService playerRecordService) {
         this.discordUserService = discordUserService;
         this.footballPlayerService = footballPlayerService;
         this.teamService = teamService;
@@ -65,6 +71,8 @@ public class DiscordUtils {
         this.ladderService = ladderService;
         this.matchStrikerService = matchStrikerService;
         this.matchDecisivePassersService = matchDecisivePassersService;
+        this.teamRecordService = teamRecordService;
+        this.playerRecordService = playerRecordService;
     }
 
     public String getCommand(String command, User messageAuthor, MessageCreateEvent event) throws InterruptedException, IOException {
@@ -130,10 +138,22 @@ public class DiscordUtils {
                 int playerScoredGoals = this.matchStrikerService.getScoredGoalsForPlayer(findingPlayer.getId());
                 int playerAssists = this.matchDecisivePassersService.getAssistsForPlayer(findingPlayer.getId());
 
+                List<PlayerRecord> playerRecords = this.playerRecordService.getPlayerRecordsByPlayer(findingPlayer.getId());
+
+                String strPlayerRecords = "";
+
+                for (PlayerRecord playerRecord : playerRecords) {
+                    strPlayerRecords += "- " + playerRecord.getLabel() + "\n";
+                }
+
                 embed.addField("Expérience", "" + playerExp);
                 embed.addField("Âge", "" + playerAge);
                 embed.addField("Buts marqués", "" + playerScoredGoals);
                 embed.addField("Passes décisives", "" + playerAssists);
+
+                if (!strPlayerRecords.equals("")) {
+                    embed.addField("Palmarès", strPlayerRecords);
+                }
 
                 channel.sendMessage(embed);
                 break;
@@ -223,11 +243,23 @@ public class DiscordUtils {
                     atck += f.getFirstName() + " " + f.getLastName() + "\n";
                 }
 
+                List<TeamRecord> teamRecords = this.teamRecordService.getTeamRecordByTeam(t.getId());
+
+                String strTeamRecords = "";
+
+                for (TeamRecord tr : teamRecords) {
+                    strTeamRecords += "- " + tr.getLabel() + "\n";
+                }
+
                 embed.addField("Budget", t.getBudget() + "€");
                 embed.addField("Gardiens de but", gk);
                 embed.addField("Défenseurs", df);
                 embed.addField("Milieux", mid);
                 embed.addField("Attaquants", atck);
+
+                if (!strTeamRecords.equals("")) {
+                    embed.addField("Palmarès", strTeamRecords);
+                }
 
                 embed.setDescription(":stadium: " + t.getStadium().getName() + " (*Niveau : " + t.getStadium().getLevel() + " - " + t.getStadium().getCapacity() + " places*)" );
                 embed.setImage(t.getStadium().getPhoto());

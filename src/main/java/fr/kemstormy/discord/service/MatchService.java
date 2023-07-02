@@ -1,7 +1,6 @@
 package fr.kemstormy.discord.service;
 
 import java.awt.Color;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -9,9 +8,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -23,8 +25,8 @@ import org.springframework.stereotype.Service;
 
 import fr.kemstormy.discord.enums.EFootballPlayerPost;
 import fr.kemstormy.discord.enums.EMatchAction;
-import fr.kemstormy.discord.enums.EMatchEvent;
 import fr.kemstormy.discord.enums.EMatchStatus;
+import fr.kemstormy.discord.enums.ERecordType;
 import fr.kemstormy.discord.model.FootballPlayer;
 import fr.kemstormy.discord.model.Ladder;
 import fr.kemstormy.discord.model.League;
@@ -32,8 +34,10 @@ import fr.kemstormy.discord.model.Match;
 import fr.kemstormy.discord.model.MatchDecisivePasser;
 import fr.kemstormy.discord.model.MatchStriker;
 import fr.kemstormy.discord.model.PlayerCharacteristics;
+import fr.kemstormy.discord.model.PlayerRecord;
 import fr.kemstormy.discord.model.Stadium;
 import fr.kemstormy.discord.model.Team;
+import fr.kemstormy.discord.model.TeamRecord;
 import fr.kemstormy.discord.model.Week;
 import fr.kemstormy.discord.repository.FootballPlayerRepository;
 import fr.kemstormy.discord.repository.LadderRepository;
@@ -41,10 +45,15 @@ import fr.kemstormy.discord.repository.MatchDecisivePasserRepository;
 import fr.kemstormy.discord.repository.MatchRepository;
 import fr.kemstormy.discord.repository.MatchStrikerRepository;
 import fr.kemstormy.discord.repository.PlayerCharacteristicsRepository;
+import fr.kemstormy.discord.repository.PlayerRecordRepository;
 import fr.kemstormy.discord.repository.StadiumRepository;
+import fr.kemstormy.discord.repository.TeamRecordRepository;
 import fr.kemstormy.discord.repository.TeamRepository;
 import fr.kemstormy.discord.resource.MatchDataResource;
+import fr.kemstormy.discord.resource.PasserLadderResource;
+import fr.kemstormy.discord.resource.StrikerLadderResource;
 import fr.kemstormy.discord.resource.XpData;
+import jakarta.persistence.Tuple;
 
 @Service
 public class MatchService {
@@ -71,6 +80,12 @@ public class MatchService {
 
     @Autowired
     private PlayerCharacteristicsRepository playerCharacteristicsRepository;
+
+    @Autowired
+    private TeamRecordRepository teamRecordRepository;
+
+    @Autowired
+    private PlayerRecordRepository playerRecordRepository;
 
     public Match createMatch(Team home, Team away, League league) {
         Match m = new Match();
@@ -104,6 +119,8 @@ public class MatchService {
         Ladder awayLadder = this.ladderRepository.getByLeagueAndTeam(awayTeam.getLeague().getId(), awayTeam.getId());
 
         Stadium homeTeamStadium = (Stadium) Hibernate.unproxy(homeTeam.getStadium());
+
+        boolean isLastMatch = this.isLastMatchOfLeague(m.getCompetition());
 
         m.setStatus(EMatchStatus.IN_PROGRESS);
         this.matchRepository.save(m);
@@ -228,6 +245,10 @@ public class MatchService {
         this.teamRepository.save(awayTeam);
 
         this.matchRepository.save(m);
+
+        if (isLastMatch) {
+            this.distributeRewards(channel, m.getCompetition().getId());
+        }
     }
 
     public List<FootballPlayer> generateComposition(Team team) {
@@ -458,5 +479,158 @@ public class MatchService {
         Color color = new Color(r, g, b);
 
         return color;
+    }
+
+    private boolean isLastMatchOfLeague(League league) {
+        int remainingMatches = this.matchRepository.countRemainingLeagueMatchs(league.getId());
+
+        return remainingMatches == 1;
+    }
+
+    private void distributeRewards(TextChannel channel, Long leagueId) {
+        this.distributeTeamRewards(channel, leagueId);
+
+        this.distributePlayersRewards(channel, leagueId);
+    }
+
+    private void distributeTeamRewards(TextChannel channel, Long leagueId) {
+        Ladder ladder = this.ladderRepository.getChampionOfLeague(leagueId);
+        Ladder ladderLast = this.ladderRepository.getLastOfLeague(leagueId);
+
+        Team t = ladder.getTeam();
+        Team lastTeam = ladderLast.getTeam();
+
+        League league = t.getLeague();
+
+        // Distribute for team
+        TeamRecord teamRecord = new TeamRecord();
+
+        teamRecord.setLeague(league);
+        teamRecord.setTeam(t);
+        teamRecord.setLabel("Champion de " + league.getName());
+
+        this.teamRecordRepository.save(teamRecord);
+
+        // Distribute for each team player
+        List<PlayerRecord> playerRecords = new ArrayList<>();
+        List<FootballPlayer> teamPlayers = this.footballPlayerRepository.findByTeam(t.getId());
+
+        for (FootballPlayer fp : teamPlayers) {
+            PlayerRecord pr = new PlayerRecord();
+
+            pr.setFootballPlayer(fp);
+            pr.setLabel("Champion de " + league.getName());
+            pr.setLeague(league);
+            pr.setRecordType(ERecordType.TEAM);
+
+            playerRecords.add(pr);
+        }
+
+        this.playerRecordRepository.saveAll(playerRecords);
+
+        channel.sendMessage("Le club **" + t.getName() + "** est sacré champion de **" + league.getName() + "** ! Félicitations !");
+        channel.sendMessage("Le club **" + lastTeam.getName() + "** est malheureusement relégué en **" + league.getLowerLeague().getName() + "** ! Plus de chance la saison prochaine !");
+    }
+
+    private void distributePlayersRewards(TextChannel channel, Long leagueId) {
+        // Best striker
+        this.distributeBestStrikerReward(channel, leagueId);
+
+        // Best passer
+        this.distributeBestPasserReward(channel, leagueId);
+
+        // Best goalkeeper
+        this.distributeBestGoalkeeperReward(channel, leagueId);
+    }
+
+    private void distributeBestStrikerReward(TextChannel channel, Long leagueId) {
+        Tuple strikerTuple = this.matchStrikerRepository.getBestStriker(leagueId);
+        Set<Entry<String, Object>> entry = strikerTuple.getElements().stream().map(e -> new HashMap.SimpleEntry<String, Object>(e.getAlias(), strikerTuple.get(e))).collect(Collectors.toSet());
+        StrikerLadderResource res = new StrikerLadderResource();
+
+        Iterator it = entry.iterator();
+        while (it.hasNext()) {
+            Map.Entry ent = (Map.Entry) it.next();
+
+            if (((String) ent.getKey()).equals("scored_goals")) {
+                res.setScoredGoals((Long) ent.getValue());
+            } else if (((String) ent.getKey()).equals("first_name")) {
+                res.setFirstName((String) ent.getValue());
+            } else if (((String) ent.getKey()).equals("last_name")) {
+                res.setLastName((String) ent.getValue());
+            } else if (((String) ent.getKey()).equals("team_name")) {
+                res.setTeamName((String) ent.getValue());
+            }
+        }
+
+        FootballPlayer footballPlayer = this.footballPlayerRepository.findByFirstNameAndLastName(res.getFirstName(), res.getLastName());
+        League league = footballPlayer.getClub().getLeague();
+
+        PlayerRecord pr = new PlayerRecord();
+
+        pr.setFootballPlayer(footballPlayer);
+        pr.setLeague(league);
+        pr.setRecordType(ERecordType.SOLO);
+        pr.setLabel("Meilleur buteur de " + league.getName());
+
+        this.playerRecordRepository.save(pr);
+
+        channel.sendMessage("**" + footballPlayer.getFirstName() + " " + footballPlayer.getLastName() + "** est sacré meilleur buteur de **" + league.getName() + "** avec **" + res.getScoredGoals() + " réalisations** ! Félicitations !");
+    }
+
+    private void distributeBestPasserReward(TextChannel channel, Long leagueId) {
+        Tuple passerTuple = this.matchDecisivePasserRepository.getBestPasserOfLeague(leagueId);
+        Set<Entry<String, Object>> entry = passerTuple.getElements().stream().map(e -> new HashMap.SimpleEntry<String, Object>(e.getAlias(), passerTuple.get(e))).collect(Collectors.toSet());
+        PasserLadderResource res = new PasserLadderResource();
+
+        Iterator it = entry.iterator();
+        while (it.hasNext()) {
+            Map.Entry ent = (Map.Entry) it.next();
+
+            if (((String) ent.getKey()).equals("assists")) {
+                res.setAssists((Long) ent.getValue());
+            } else if (((String) ent.getKey()).equals("first_name")) {
+                res.setFirstName((String) ent.getValue());
+            } else if (((String) ent.getKey()).equals("last_name")) {
+                res.setLastName((String) ent.getValue());
+            } else if (((String) ent.getKey()).equals("team_name")) {
+                res.setTeamName((String) ent.getValue());
+            }
+        }
+
+        FootballPlayer footballPlayer = this.footballPlayerRepository.findByFirstNameAndLastName(res.getFirstName(), res.getLastName());
+        League league = footballPlayer.getClub().getLeague();
+
+        PlayerRecord pr = new PlayerRecord();
+
+        pr.setFootballPlayer(footballPlayer);
+        pr.setLeague(league);
+        pr.setRecordType(ERecordType.SOLO);
+        pr.setLabel("Meilleur passeur de " + league.getName());
+
+        this.playerRecordRepository.save(pr);
+
+        channel.sendMessage("**" + footballPlayer.getFirstName() + " " + footballPlayer.getLastName() + "** est sacré meilleur passeur de **" + league.getName() + "** avec **" + res.getAssists() + " passes décisives** ! Félicitations !");
+    }
+
+    private void distributeBestGoalkeeperReward(TextChannel channel, Long leagueId) {
+        Ladder bestDefence = this.ladderRepository.getBestDefence(leagueId);
+        Team team = bestDefence.getTeam();
+        League league = team.getLeague();
+
+        List<FootballPlayer> players = this.footballPlayerRepository.getFootballPlayersByTeamAndPost(team.getId(), EFootballPlayerPost.GOALKEEPER.ordinal());
+
+        FootballPlayer p = players.get(0);
+
+        PlayerRecord pr = new PlayerRecord();
+
+        pr.setFootballPlayer(p);
+        pr.setLeague(league);
+        pr.setRecordType(ERecordType.SOLO);
+        pr.setLabel("Meilleur gardien de " + league.getName());
+
+        this.playerRecordRepository.save(pr);
+
+        channel.sendMessage("**" + p.getFirstName() + " " + p.getLastName() + "** est sacré meilleur gardien de **" + league.getName() + "** avec seulement **" + bestDefence.getConcededGoals() + " buts encaissés** ! Félicitations !");
     }
 }

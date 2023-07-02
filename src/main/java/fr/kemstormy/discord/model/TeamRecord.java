@@ -1,41 +1,30 @@
 package fr.kemstormy.discord.model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
 @Table
 @Data
-public class PlayerCharacteristics {
+public class TeamRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    int experience = 0;
+    @OneToOne
+    @Nullable
+    League league;
 
-    int passes = 1;
+    String label;
 
-    int interceptions = 1;
-
-    int shots = 1;
-
-    int longShots = 1;
-
-    int longPasses = 1;
-
-    int shotStopping = 1;
-
-    int corners = 1;
-
-    int freekicks = 1;
-
-    int dribbles = 1;
-
-    int tackles = 1;
-
-    int penalty = 1;
+    @ManyToOne
+    @Nullable
+    Team team;
 }

@@ -1,6 +1,5 @@
 package fr.kemstormy.discord.model;
 
-
 import fr.kemstormy.discord.enums.EFootballPlayerGenerationType;
 import fr.kemstormy.discord.enums.EFootballPlayerPost;
 import jakarta.annotation.Nullable;

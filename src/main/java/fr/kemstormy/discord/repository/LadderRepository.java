@@ -14,6 +14,15 @@ public interface LadderRepository extends JpaRepository<Ladder, Long> {
     @Query(nativeQuery = true, value = "select * from ladder where league_id = :leagueId and team_id = :teamId")
     public Ladder getByLeagueAndTeam(@Param("leagueId") Long leagueId, @Param("teamId") Long teamId);
 
-    @Query(nativeQuery = true, value = "select * from ladder where league_id = :leagueId order by victories * 3 + draws desc")
+    @Query(nativeQuery = true, value = "select * from ladder where league_id = :leagueId order by victories * 3 + draws desc, scored_goals - conceded_goals desc")
     public List<Ladder> findByLeagueId(@Param("leagueId") Long leagueId);
+
+    @Query(nativeQuery = true, value = "select * from ladder where league_id = :leagueId order by victories * 3 + draws desc, scored_goals - conceded_goals desc limit 1")
+    public Ladder getChampionOfLeague(@Param("leagueId") Long leagueId);
+
+    @Query(nativeQuery = true, value = "select * from ladder where league_id = :leagueId order by victories * 3 + draws asc, scored_goals - conceded_goals asc limit 1")
+    public Ladder getLastOfLeague(@Param("leagueId") Long leagueId);
+
+    @Query(nativeQuery = true, value = "select * from ladder where league_id = :leagueId order by conceded_goals asc limit 1")
+    public Ladder getBestDefence(@Param("leagueId") Long leagueId);
 }
