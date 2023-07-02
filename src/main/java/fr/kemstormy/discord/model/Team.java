@@ -42,17 +42,19 @@ public class Team {
      * 23 players max
      */
 
-    private int quotaGoalKeepers;
+    private int quotaGoalKeepers = 1;
 
-    private int quotaDefenders;
+    private int quotaDefenders = 0;
 
-    private int quotaMidfielders;
+    private int quotaMidfielders = 0;
 
-    private int quotaForwards;
+    private int quotaForwards = 0;
 
     @Nullable
     private String mainColor;
 
     @Nullable
     private String secondaryColor;
+
+    private int budget = 0;
 }

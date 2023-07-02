@@ -214,11 +214,18 @@ public class MatchService {
 
         if (matchData.getScoreHome() > matchData.getScoreAway()) {
             this.processStadiumXp(homeTeamStadium, 3, channel);
+            homeTeam.setBudget(homeTeam.getBudget() + 3);
         } else if (matchData.getScoreHome() == matchData.getScoreAway()) {
             this.processStadiumXp(homeTeamStadium, 1, channel);
+            homeTeam.setBudget(homeTeam.getBudget() + 1);
+            awayTeam.setBudget(homeTeam.getBudget() + 2);
+        } else {
+            awayTeam.setBudget(homeTeam.getBudget() + 4);
         }
 
         this.processXpPlayers(matchData.getMatchXpTable(), channel);
+        this.teamRepository.save(homeTeam);
+        this.teamRepository.save(awayTeam);
 
         this.matchRepository.save(m);
     }

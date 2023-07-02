@@ -223,6 +223,7 @@ public class DiscordUtils {
                     atck += f.getFirstName() + " " + f.getLastName() + "\n";
                 }
 
+                embed.addField("Budget", t.getBudget() + "€");
                 embed.addField("Gardiens de but", gk);
                 embed.addField("Défenseurs", df);
                 embed.addField("Milieux", mid);

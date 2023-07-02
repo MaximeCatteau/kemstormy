@@ -25,4 +25,18 @@ public class PlayerCharacteristics {
     int shots = 1;
 
     int longShots = 1;
+
+    int longPasses = 1;
+
+    int shotStopping = 1;
+
+    int corners = 1;
+
+    int freekicks = 1;
+
+    int dribbles = 1;
+
+    int tackles = 1;
+
+    int penalty = 1;
 }
