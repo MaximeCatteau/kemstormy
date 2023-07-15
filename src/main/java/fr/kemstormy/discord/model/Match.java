@@ -39,6 +39,8 @@ public class Match {
 
     int scoreAway = 0;
 
+    Integer day = 0;
+
     @OneToOne(fetch = FetchType.LAZY)
     League competition;
 

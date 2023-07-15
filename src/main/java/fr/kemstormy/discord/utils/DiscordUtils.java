@@ -27,6 +27,7 @@ import fr.kemstormy.discord.model.DiscordUser;
 import fr.kemstormy.discord.model.FootballPlayer;
 import fr.kemstormy.discord.model.Ladder;
 import fr.kemstormy.discord.model.League;
+import fr.kemstormy.discord.model.Nationality;
 import fr.kemstormy.discord.model.PlayerRecord;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.model.TeamRecord;
@@ -128,10 +129,17 @@ public class DiscordUtils {
                     break;
                 }
 
-                embed.setTitle(findingPlayer.getFirstName() + " " + findingPlayer.getLastName() + " - Niveau " + findingPlayer.getLevel());
-                embed.setThumbnail(findingPlayer.getClub().getLogo());
-                embed.setDescription(findingPlayer.getClub().getName());
-                embed.setColor(this.convertHexToColor(findingPlayer.getClub().getMainColor()));
+                Nationality nationality = findingPlayer.getNationality();
+
+                embed.setTitle(findingPlayer.getFirstName() + " " + findingPlayer.getLastName() + " - " + nationality.getFlag() + " - Niveau " + findingPlayer.getLevel());
+
+                if (findingPlayer.getClub() != null) {
+                    embed.setDescription(findingPlayer.getClub().getName());
+                    embed.setColor(this.convertHexToColor(findingPlayer.getClub().getMainColor()));
+                    embed.setThumbnail(findingPlayer.getClub().getLogo());
+                } else {
+                    embed.setDescription("_Sans club_");
+                }
 
                 int playerExp = findingPlayer.getPlayerCharacteristics().getExperience();
                 int playerAge = findingPlayer.getAge();
@@ -228,19 +236,19 @@ public class DiscordUtils {
                 String atck = "";
 
                 for (FootballPlayer f : goalkeepers) {
-                    gk += f.getFirstName() + " " + f.getLastName() + "\n";
+                    gk += f.getFirstName() + " " + f.getLastName() + " - " + f.getNationality().getFlag() + "\n";
                 }
 
                 for (FootballPlayer f : defenders) {
-                    df += f.getFirstName() + " " + f.getLastName() + "\n";
+                    df += f.getFirstName() + " " + f.getLastName() + " - " + f.getNationality().getFlag() + "\n";
                 }
 
                 for (FootballPlayer f : midfielders) {
-                    mid += f.getFirstName() + " " + f.getLastName() + "\n";
+                    mid += f.getFirstName() + " " + f.getLastName() + " - " + f.getNationality().getFlag() + "\n";
                 }
 
                 for (FootballPlayer f : forwards) {
-                    atck += f.getFirstName() + " " + f.getLastName() + "\n";
+                    atck += f.getFirstName() + " " + f.getLastName() + " - " + f.getNationality().getFlag() + "\n";
                 }
 
                 List<TeamRecord> teamRecords = this.teamRecordService.getTeamRecordByTeam(t.getId());
@@ -323,13 +331,21 @@ public class DiscordUtils {
                     }
                     break;
                 } else if (commands.get(1).equals("players")) {
-                    List<FootballPlayer> generatedPlayers = this.footballPlayerService.generateBotFootballPlayers();
-                    msg = "Joueurs générés (30) :\n";
-                    for (FootballPlayer footballPlayer : generatedPlayers) {
-                        msg += footballPlayer.getFirstName() + " " + footballPlayer.getLastName() + " (" + footballPlayer.getPost().name() + ")\n";
+                    if (!messageAuthor.getIdAsString().equals("185790407156826113")) {
+                        msg = "Vous n'avez pas accès à cette commande";
+                        break;
                     }
+
+                    List<FootballPlayer> newPlayers = this.footballPlayerService.generateNewFootballPlayers(Long.valueOf(1));
+
+                    msg = newPlayers.size() + " ont été générés correctement !";
                     break;
                 } else if (commands.get(1).equals("matchs")) {
+                    if (!messageAuthor.getIdAsString().equals("185790407156826113")) {
+                        msg = "Vous n'avez pas accès à cette commande";
+                        break;
+                    }
+                    
                     List<String> cmds = new ArrayList(commands);
 
                     String mainLeagueName = cmds.get(2);

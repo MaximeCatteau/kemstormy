@@ -39,7 +39,10 @@ public class FootballPlayer {
     private Team club;
 
     @OneToOne(fetch = FetchType.LAZY)
-    private PlayerCharacteristics playerCharacteristics;
+    private PlayerCharacteristics playerCharacteristics = new PlayerCharacteristics();
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private Nationality nationality;
 
     int level = 1;
 

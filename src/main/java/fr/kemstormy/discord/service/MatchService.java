@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import fr.kemstormy.discord.enums.EFootballPlayerPost;
 import fr.kemstormy.discord.enums.EMatchAction;
+import fr.kemstormy.discord.enums.EMatchEvent;
 import fr.kemstormy.discord.enums.EMatchStatus;
 import fr.kemstormy.discord.enums.ERecordType;
 import fr.kemstormy.discord.model.FootballPlayer;
@@ -122,22 +123,34 @@ public class MatchService {
 
         boolean isLastMatch = this.isLastMatchOfLeague(m.getCompetition());
 
-        m.setStatus(EMatchStatus.IN_PROGRESS);
-        this.matchRepository.save(m);
-
         // Coin toss
         Team possesion = this.coinToss(homeTeam, awayTeam);
 
         // The football player who has the ball is one of the forwards of possession team
         FootballPlayer possessioner = this.defineKickOffPlayer(possesion.equals(homeTeam) ? startingHome : startingAway);
 
+        m.setStatus(EMatchStatus.IN_PROGRESS);
+
         // Define the first action to do
-        EMatchAction firstAction = EMatchAction.defineAction(possessioner, true);
+        EMatchAction firstAction = this.defineAction(possessioner, true);
 
         List<FootballPlayer> allPlayers = new ArrayList<>();
         allPlayers.addAll(startingHome);
         allPlayers.addAll(startingAway);
 
+        /***
+         * Pre-kickoff requirements :
+         * - Home team - OK
+         * - Away team - OK
+         * - Kick off team - OK
+         * - Possessionner - OK
+         * - Stadium - OK
+         * - Starting XI home/away - OK
+         * - The match - OK
+         * - The first action of the match
+         */
+
+        // Initialize match data
         MatchDataResource matchData = new MatchDataResource();
 
         matchData.setMatch(m);
@@ -159,23 +172,21 @@ public class MatchService {
         this.sendCompoEmbed(channel, awayTeam, startingAway, false);
         TimeUnit.SECONDS.sleep(2);
 
-        List<FootballPlayer> mates = EMatchAction.getEligibleTeamMates(firstAction, possesion.equals(homeTeam) ? startingHome : startingAway, possessioner);
+        channel.sendMessage("0' - " + possessioner.getMatchName() + " " + possessioner.getNationality().getFlag() + " donne le coup d'envoi de cette rencontre !");
 
-        channel.sendMessage("0' - " + possessioner.getMatchName() + " donne le coup d'envoi de cette rencontre !");
-
-        matchData = EMatchAction.playAction(channel, matchData, mates, possesion.equals(homeTeam) ? startingHome : startingAway);
+        matchData = this.playAction(channel, matchData, possesion.equals(homeTeam) ? startingHome : startingAway, !possesion.equals(homeTeam) ? startingHome : startingAway);
 
         for (int i = 1; i < 90; i+=timeRandomOffset.nextInt(10)+1) {
             FootballPlayer randomPossessionner = allPlayers.get(randomPlayer.nextInt(allPlayers.size()));
-            EMatchAction actionToPlay = EMatchAction.defineAction(randomPossessionner, false);
+            EMatchAction actionToPlay = this.defineAction(randomPossessionner, false);
             List<FootballPlayer> teamWithBall = possesion.equals(homeTeam) ? startingHome : startingAway;
-            mates = EMatchAction.getEligibleTeamMates(actionToPlay, teamWithBall, possessioner);
+            List<FootballPlayer> teamWithNoBall = !possesion.equals(homeTeam) ? startingHome : startingAway;
 
             matchData.setPossessioner(randomPossessionner);
             matchData.setAction(actionToPlay);
             matchData.setMinute(i);
 
-            matchData = EMatchAction.playAction(channel, matchData, mates, teamWithBall);
+            matchData = this.playAction(channel, matchData, teamWithBall, teamWithNoBall);
 
             TimeUnit.SECONDS.sleep(2);
         }
@@ -227,8 +238,6 @@ public class MatchService {
 
         this.matchDecisivePasserRepository.saveAll(decisivePassersToAdd);
 
-        System.out.println("Fin du match");
-
         if (matchData.getScoreHome() > matchData.getScoreAway()) {
             this.processStadiumXp(homeTeamStadium, 3, channel);
             homeTeam.setBudget(homeTeam.getBudget() + 3);
@@ -255,9 +264,9 @@ public class MatchService {
         List<FootballPlayer> compo = new ArrayList<>();
 
         compo.add(this.footballPlayerRepository.getRandomGoalkeeper(team.getId()));
-        compo.addAll(this.footballPlayerRepository.getRandomDefenders(team.getId(), 4));
-        compo.addAll(this.footballPlayerRepository.getRandomMidfielders(team.getId(), 4));
-        compo.addAll(this.footballPlayerRepository.getRandomAttackers(team.getId(), 2));
+        compo.addAll(this.footballPlayerRepository.getRandomDefenders(team.getId(), team.getQuotaDefenders()));
+        compo.addAll(this.footballPlayerRepository.getRandomMidfielders(team.getId(), team.getQuotaMidfielders()));
+        compo.addAll(this.footballPlayerRepository.getRandomAttackers(team.getId(), team.getQuotaForwards()));
 
         return compo;
     }
@@ -272,10 +281,10 @@ public class MatchService {
 
         embed.setTitle("Composition de départ - " + team.getName());
 
-        embed.addField("Gardien de but", goalkeepers.get(0).getFirstName() + " " + goalkeepers.get(0).getLastName());
-        embed.addField("Défenseurs", defenders.stream().map(fp -> fp.getFirstName() + " " + fp.getLastName()).collect(Collectors.joining("\n")));
-        embed.addField("Milieux", midfielders.stream().map(fp -> fp.getFirstName() + " " + fp.getLastName()).collect(Collectors.joining("\n")));
-        embed.addField("Attaquants", forwards.stream().map(fp -> fp.getFirstName() + " " + fp.getLastName()).collect(Collectors.joining("\n")));
+        embed.addField("Gardien de but", goalkeepers.get(0).getFirstName() + " " + goalkeepers.get(0).getLastName() + " " + goalkeepers.get(0).getNationality().getFlag());
+        embed.addField("Défenseurs", defenders.stream().map(fp -> fp.getFirstName() + " " + fp.getLastName() + " " + fp.getNationality().getFlag()).collect(Collectors.joining("\n")));
+        embed.addField("Milieux", midfielders.stream().map(fp -> fp.getFirstName() + " " + fp.getLastName() + " " + fp.getNationality().getFlag()).collect(Collectors.joining("\n")));
+        embed.addField("Attaquants", forwards.stream().map(fp -> fp.getFirstName() + " " + fp.getLastName() + " " + fp.getNationality().getFlag()).collect(Collectors.joining("\n")));
 
         embed.setThumbnail(team.getLogo());
 
@@ -387,19 +396,24 @@ public class MatchService {
 	
 		
 		Collections.shuffle(weeks);
+
+        int idx = 1;
 		
 		for (Week w : weeks) {
 			Instant today = Instant.now();
 
-			int minHour = 14;
+			int minHour = 10;
 
 			Instant matchDay = today.plus(weeks.indexOf(w), ChronoUnit.DAYS);
 
 			for (Match m : w.getMatchs()) {
 				Instant matchTime = matchDay.atZone(ZoneOffset.UTC).withHour((minHour + (w.getMatchs().indexOf(m) * 1))).withMinute(0).withSecond(0).withNano(0).toInstant();
                 m.setDate(matchTime);
+                m.setDay(idx);
                 this.matchRepository.save(m);
 			}
+
+            idx++;
 		}
 	}
 
@@ -632,5 +646,571 @@ public class MatchService {
         this.playerRecordRepository.save(pr);
 
         channel.sendMessage("**" + p.getFirstName() + " " + p.getLastName() + "** est sacré meilleur gardien de **" + league.getName() + "** avec seulement **" + bestDefence.getConcededGoals() + " buts encaissés** ! Félicitations !");
+    }
+
+    private EMatchAction defineAction(FootballPlayer possessionner, boolean isKickoff) {
+        Random randomAction = new Random();
+
+        List<EMatchAction> possibleActions = this.getPossibleActions(possessionner, isKickoff, null, null, null);
+        return possibleActions.get(randomAction.nextInt(possibleActions.size()));
+    }
+
+    private List<EMatchAction> getPossibleActions(FootballPlayer possessionner, boolean isKickoff, EMatchAction previousAction, FootballPlayer previousPlayer, EMatchEvent event) {
+        List<EMatchAction> possibleActions = new ArrayList<>();
+        Team playerTeam = (Team) Hibernate.unproxy(possessionner.getClub());
+        possibleActions.add(EMatchAction.END_OF_ACTION);
+
+        switch(possessionner.getPost()) {
+            case GOALKEEPER:
+                possibleActions.add(EMatchAction.CLEARANCE);
+                possibleActions.add(EMatchAction.SHORT_CLEARANCE);
+                possibleActions.add(EMatchAction.LONG_PASS);
+                break;
+            case DEFENDER:
+                possibleActions.add(EMatchAction.SHORT_BACK_PASS);
+                possibleActions.add(EMatchAction.LONG_PASS);
+                possibleActions.add(EMatchAction.SHORT_PROGRESSIVE_PASS);
+                possibleActions.add(EMatchAction.LONG_SHOT);
+
+                break;
+            case MIDFIELDER:
+                possibleActions.add(EMatchAction.SHORT_BACK_PASS);
+                possibleActions.add(EMatchAction.SHORT_PROGRESSIVE_PASS);
+                possibleActions.add(EMatchAction.LONG_SHOT);
+                break;
+            case FORWARD:
+                if (playerTeam.getQuotaForwards() > 1) {
+                    possibleActions.add(EMatchAction.SHORT_PROGRESSIVE_PASS);
+                }
+
+                possibleActions.add(EMatchAction.SHORT_BACK_PASS);
+
+                if (isKickoff) {
+                    break;
+                }
+
+                possibleActions.add(EMatchAction.SHORT_SHOT);
+
+                break;
+            default:
+                break;
+        }
+
+        return possibleActions;
+    }
+
+    private List<FootballPlayer> getEligibleTeamMates(EMatchAction previousAction, List<FootballPlayer> team, FootballPlayer possessionner) {
+        List<FootballPlayer> eligible = new ArrayList(team);
+
+        eligible.remove(possessionner);
+
+        if (previousAction == null) {
+            return eligible;
+        }
+
+        switch (previousAction) {
+            case SHORT_PROGRESSIVE_PASS:
+                if (possessionner.getPost().equals(EFootballPlayerPost.FORWARD)) {
+                    eligible.removeAll(eligible.stream().filter(f -> !f.getPost().equals(EFootballPlayerPost.FORWARD)).toList());
+                } else if (possessionner.getPost().equals(EFootballPlayerPost.MIDFIELDER)) {
+                    eligible.removeAll(eligible.stream().filter(f -> f.getPost().equals(EFootballPlayerPost.DEFENDER) || f.getPost().equals(EFootballPlayerPost.GOALKEEPER)).toList());
+                } else if (possessionner.getPost().equals(EFootballPlayerPost.DEFENDER)) {
+                    eligible.removeAll(eligible.stream().filter(f -> f.getPost().equals(EFootballPlayerPost.FORWARD) || f.getPost().equals(EFootballPlayerPost.GOALKEEPER)).toList());
+                } else {
+                    eligible.removeAll(eligible.stream().filter(f -> !f.getPost().equals(EFootballPlayerPost.DEFENDER)).toList());
+                }
+                break;
+            case SHORT_BACK_PASS:
+                if (possessionner.getPost().equals(EFootballPlayerPost.FORWARD)) {
+                    eligible.removeAll(eligible.stream().filter(f -> !f.getPost().equals(EFootballPlayerPost.MIDFIELDER)).toList());
+                } else if (possessionner.getPost().equals(EFootballPlayerPost.MIDFIELDER)) {
+                    eligible.removeAll(eligible.stream().filter(f -> !f.getPost().equals(EFootballPlayerPost.DEFENDER)).toList());
+                } else {
+                    eligible.removeAll(eligible.stream().filter(f -> !f.getPost().equals(EFootballPlayerPost.GOALKEEPER)).toList());
+                }
+                break;
+            case LONG_PASS:
+                if (possessionner.getPost().equals(EFootballPlayerPost.GOALKEEPER)) {
+                    eligible.removeAll(eligible.stream().filter(f -> f.getPost().equals(EFootballPlayerPost.DEFENDER) || f.getPost().equals(EFootballPlayerPost.GOALKEEPER)).toList());
+                } else if (possessionner.getPost().equals(EFootballPlayerPost.DEFENDER)) {
+                    eligible.removeAll(eligible.stream().filter(f -> !f.getPost().equals(EFootballPlayerPost.FORWARD)).toList());
+                }
+                break;
+            default:
+                break;
+        }
+
+        return eligible;
+    }
+
+    private MatchDataResource playAction(TextChannel tc, MatchDataResource resource, List<FootballPlayer> allTeamPlayers, List<FootballPlayer> opponentPlayers) {
+        String msg = "";
+        Random randomPlayer = new Random();
+        EMatchEvent matchEvent = EMatchEvent.NOTHING;
+        FootballPlayer nextFootballPlayer;
+        Team playerClub = (Team) Hibernate.unproxy(resource.getPossessioner().getClub());
+        PlayerCharacteristics pc = (PlayerCharacteristics) Hibernate.unproxy(resource.getPossessioner().getPlayerCharacteristics());
+        List<FootballPlayer> eligiblePlayers = this.getEligibleTeamMates(resource.getAction(), allTeamPlayers, resource.getPossessioner());
+
+        // Definir le joueur destinataire
+        if (eligiblePlayers != null && eligiblePlayers.size() > 0) {
+            nextFootballPlayer = eligiblePlayers.get(randomPlayer.nextInt(eligiblePlayers.size()));
+        } else {
+            nextFootballPlayer = null;
+        }
+
+        float actionSuccessPercentage = this.calculateActionSuccessProbability(resource.getPossessioner(), pc, resource.getAction(), nextFootballPlayer);
+
+        switch(resource.getAction()) {
+            case SHORT_PROGRESSIVE_PASS:
+                tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " " + resource.getPossessioner().getNationality().getFlag() + " effectue une passe vers " + nextFootballPlayer.getMatchName() + " " + nextFootballPlayer.getNationality().getFlag());
+                if (!this.actionSuccess(actionSuccessPercentage)) {
+                    // Intercepteurs potentiels
+                    List<FootballPlayer> potentialInterceptors = new ArrayList<>();
+                    FootballPlayer interceptor;
+
+                    potentialInterceptors = this.getPotentialInterceptors(opponentPlayers, resource.getPossessioner().getPost());
+                    interceptor = potentialInterceptors.get(randomPlayer.nextInt(potentialInterceptors.size()));
+
+                    // Ballon non intercepté
+                    if (!this.actionSuccess(this.calculateInterceptionSuccessProbability(interceptor, interceptor.getPlayerCharacteristics()))) {
+                        tc.sendMessage("Le " + resource.getPossessioner().getNationality().getGentilé() + " " + resource.getPossessioner().getNationality().getFlag() + " rate sa passe, le ballon est perdu...");
+                        matchEvent = EMatchEvent.NOTHING;
+                        resource.setMatchEvent(matchEvent);
+                        resource.setLastPossessioner(null);
+                        break;
+                    }
+                    // Ballon intercepté
+                    tc.sendMessage(interceptor.getMatchName() + " " + interceptor.getNationality().getFlag() + " intercepte le ballon !");
+                    EMatchAction nextAction = this.defineAction(interceptor, false);
+                    
+                    this.processMatchXpTable(resource.getMatchXpTable(), interceptor.getId(), 1);
+
+                    resource.setAction(nextAction);
+                    resource.setLastPossessioner(resource.getPossessioner());
+                    resource.setPossessioner(interceptor);
+
+                    return this.playAction(tc, resource, opponentPlayers, allTeamPlayers);
+                } else {
+                    EMatchAction nextAction = this.defineAction(nextFootballPlayer, false);
+
+                    this.processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 1);
+
+                    resource.setAction(nextAction);
+                    resource.setLastPossessioner(resource.getPossessioner());
+                    resource.setPossessioner(nextFootballPlayer);
+
+                    return this.playAction(tc, resource, allTeamPlayers, opponentPlayers);
+                }
+            case SHORT_BACK_PASS:
+                tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " " + resource.getPossessioner().getNationality().getFlag() + " effectue une passe en retrait vers " + nextFootballPlayer.getMatchName() + ".");
+                if (!this.actionSuccess(actionSuccessPercentage)) {
+                    // Intercepteurs potentiels
+                    List<FootballPlayer> potentialInterceptors = new ArrayList<>();
+                    FootballPlayer interceptor;
+
+                    potentialInterceptors = this.getPotentialInterceptors(opponentPlayers, resource.getPossessioner().getPost());
+                    interceptor = potentialInterceptors.get(randomPlayer.nextInt(potentialInterceptors.size()));
+
+                    // Ballon non intercepté
+                    if (!this.actionSuccess(this.calculateInterceptionSuccessProbability(interceptor, interceptor.getPlayerCharacteristics()))) {
+                        tc.sendMessage("Le " + resource.getPossessioner().getNationality().getGentilé() + " " + resource.getPossessioner().getNationality().getFlag() + " rate sa passe, le ballon est perdu...");
+                        matchEvent = EMatchEvent.NOTHING;
+                        resource.setMatchEvent(matchEvent);
+                        resource.setLastPossessioner(null);
+                        break;
+                    }
+                    // Ballon intercepté
+                    tc.sendMessage(interceptor.getMatchName() + " " + interceptor.getNationality().getFlag() + " intercepte le ballon !");
+                    EMatchAction nextAction = this.defineAction(interceptor, false);
+                    
+                    this.processMatchXpTable(resource.getMatchXpTable(), interceptor.getId(), 1);
+
+                    resource.setAction(nextAction);
+                    resource.setLastPossessioner(resource.getPossessioner());
+                    resource.setPossessioner(interceptor);
+
+                    return this.playAction(tc, resource, opponentPlayers, allTeamPlayers);
+                } else {
+                    EMatchAction nextAction = this.defineAction(nextFootballPlayer, false);
+                    
+                    this.processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 1);
+
+                    resource.setAction(nextAction);
+                    resource.setLastPossessioner(resource.getPossessioner());
+                    resource.setPossessioner(nextFootballPlayer);
+
+                    return this.playAction(tc, resource, allTeamPlayers, opponentPlayers);
+                }
+            case LONG_PASS:
+                tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " " + resource.getPossessioner().getNationality().getFlag() + " tente une longue passe vers " + nextFootballPlayer.getMatchName() + ".");
+                if (!this.actionSuccess(actionSuccessPercentage)) {
+                     // Intercepteurs potentiels
+                    List<FootballPlayer> potentialInterceptors = new ArrayList<>();
+                    FootballPlayer interceptor;
+
+                    potentialInterceptors = this.getPotentialInterceptors(opponentPlayers, resource.getPossessioner().getPost());
+                    interceptor = potentialInterceptors.get(randomPlayer.nextInt(potentialInterceptors.size()));
+
+                    // Ballon non intercepté
+                    if (!this.actionSuccess(this.calculateInterceptionSuccessProbability(interceptor, interceptor.getPlayerCharacteristics()))) {
+                        tc.sendMessage("Le joueur " + resource.getPossessioner().getNationality().getGentilé() + " " + resource.getPossessioner().getNationality().getFlag() + " rate sa passe, le ballon est perdu...");
+                        matchEvent = EMatchEvent.NOTHING;
+                        resource.setMatchEvent(matchEvent);
+                        resource.setLastPossessioner(null);
+                        break;
+                    }
+                    // Ballon intercepté
+                    tc.sendMessage(interceptor.getMatchName() + " intercepte le ballon !");
+                    EMatchAction nextAction = this.defineAction(interceptor, false);
+                    
+                    this.processMatchXpTable(resource.getMatchXpTable(), interceptor.getId(), 1);
+
+                    resource.setAction(nextAction);
+                    resource.setLastPossessioner(resource.getPossessioner());
+                    resource.setPossessioner(interceptor);
+
+                    return this.playAction(tc, resource, opponentPlayers, allTeamPlayers);
+                } else {
+                    EMatchAction nextAction = defineAction(nextFootballPlayer, false);
+
+                    this.processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 1);
+
+                    resource.setAction(nextAction);
+                    resource.setLastPossessioner(resource.getPossessioner());
+                    resource.setPossessioner(nextFootballPlayer);
+
+                    return this.playAction(tc, resource, allTeamPlayers, opponentPlayers);
+                }
+            case SHORT_SHOT:
+                tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " est en bonne position pour frapper, il tente sa chance...");
+                if (!this.actionSuccess(actionSuccessPercentage)) {
+                    tc.sendMessage("... et c'est raté, le ballon est perdu... :x:");
+                    matchEvent = EMatchEvent.NOTHING;
+                    resource.setLastPossessioner(null);
+                    resource.setPossessioner(null);
+                    break;
+                } else {
+                    // Définir le gardien adverse
+                    FootballPlayer opponentGoalkeeper = this.getGoalkeeper(opponentPlayers);
+
+                    // Définir si le gardien fait 1 arrêt
+                    if (!actionSuccess(this.calculateSaveSuccessProbability(opponentGoalkeeper, opponentGoalkeeper.getPlayerCharacteristics()))) {
+                         if (playerClub.getName().equals(resource.getHomeTeam().getName())) {
+                            resource.setScoreHome(resource.getScoreHome()+1);
+                        } else {
+                            resource.setScoreAway(resource.getScoreAway()+1);
+                        }
+
+                        if (resource.getLastPossessioner() != null) {
+                            resource.getPassers().add(resource.getLastPossessioner());
+                        }
+
+                        resource.getScorers().add(resource.getPossessioner());
+
+                        tc.sendMessage(":boom: GOAAAAAAAAAAAAAAAAL ! But marqué par " + resource.getPossessioner().getFirstName() + " " + resource.getPossessioner().getLastName() + " " + resource.getPossessioner().getNationality().getFlag() + " (" + resource.getScoreHome() + " - " + resource.getScoreAway() + ")");
+                        
+                        this.processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 2);
+
+                        resource.setLastPossessioner(null);
+                        resource.setPossessioner(null);
+
+                        return resource;
+                    } else {
+                        if (!actionSuccess(this.calculateShotStoppingSuccessProbability(opponentGoalkeeper, opponentGoalkeeper.getPlayerCharacteristics()))) {
+                            // Shot détourné
+                            // Si détourné : corner
+                            tc.sendMessage("... mais le tir est détourné en corner par le gardien adverse ! :x:");
+                            this.processMatchXpTable(resource.getMatchXpTable(), opponentGoalkeeper.getId(), 1);
+
+                            resource.setAction(EMatchAction.CORNER);
+                            resource.setLastPossessioner(resource.getPossessioner());
+                            resource.setPossessioner(this.determineBestCornerKicker(allTeamPlayers));
+
+                            return this.playAction(tc, resource, allTeamPlayers, opponentPlayers);
+                        } else {
+                            // Shot stoppé
+                            // Si stoppé : récupération pour l'équipe adverse
+                            tc.sendMessage("C'était cadré mais " + opponentGoalkeeper.getMatchName() + " " + opponentGoalkeeper.getNationality().getFlag() + " était sur la trajectoire et capte le ballon :x:");
+                            this.processMatchXpTable(resource.getMatchXpTable(), opponentGoalkeeper.getId(), 2);
+                            
+                            resource.setAction(this.defineAction(opponentGoalkeeper, false));
+                            resource.setLastPossessioner(resource.getPossessioner());
+                            resource.setPossessioner(opponentGoalkeeper);
+
+                            return this.playAction(tc, resource, opponentPlayers, allTeamPlayers);
+                        }
+                    }
+                }
+            case LONG_SHOT:
+                tc.sendMessage(resource.getMinute() + "' - " + resource.getPossessioner().getMatchName() + " tente sa chance de loin...");
+                if (!this.actionSuccess(actionSuccessPercentage)) {
+                    tc.sendMessage("... et c'est raté. Il n'avait presque aucune chance de marquer à cette distance... :x:");
+                    matchEvent = EMatchEvent.NOTHING;
+                    resource.setMatchEvent(matchEvent);
+                    resource.setLastPossessioner(null);
+                    resource.setPossessioner(null);
+                    break;
+                } else {
+                    if (playerClub.getName().equals(resource.getHomeTeam().getName())) {
+                        resource.setScoreHome(resource.getScoreHome()+1);
+                    } else {
+                        resource.setScoreAway(resource.getScoreAway()+1);
+                    }
+
+                    if (resource.getLastPossessioner() != null) {
+                        resource.getPassers().add(resource.getLastPossessioner());
+                    }
+
+                    resource.getScorers().add(resource.getPossessioner());
+
+                    this.processMatchXpTable(resource.getMatchXpTable(), resource.getPossessioner().getId(), 2);
+
+                    tc.sendMessage(":rocket: OH LE BOMBAZOOOOOOOOOOOOOOOOO ! Quel but splendide marqué par " + resource.getPossessioner().getFirstName() + " " + resource.getPossessioner().getNationality().getFlag() + " " + resource.getPossessioner().getLastName() + " (" + resource.getScoreHome() + " - " + resource.getScoreAway() + ")");
+                    
+                    resource.setLastPossessioner(null);
+                    resource.setPossessioner(null);
+
+                    return resource;
+                }
+            default:
+                resource.setMatchEvent(EMatchEvent.NOTHING);
+
+                resource.setLastPossessioner(null);
+                resource.setPossessioner(null); 
+
+                return resource;
+        }
+
+        tc.sendMessage(msg);
+
+        return resource;
+    }
+
+    private float calculateActionSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha, EMatchAction action, FootballPlayer receiver) {
+        float chances = 0;
+
+        switch(action) {
+            case SHORT_BACK_PASS:
+            case SHORT_PROGRESSIVE_PASS:
+                if (receiver == null) {
+                    break;
+                }
+                chances = this.calculatePassSuccessProbability(fp, cha, receiver.getPost());
+                break;
+            case LONG_PASS:
+            if (receiver == null) {
+                    break;
+                }
+                chances = this.calculateLongPassSuccessProbability(fp, cha, receiver.getPost());
+                break;
+            case SHORT_SHOT:
+                chances = this.calculateShotSuccessProbability(fp, cha);
+                break;
+            case LONG_SHOT:
+                chances = this.calculateLongShotSuccessProbability(fp, cha);
+                break;
+            default:
+                break;
+        }
+
+        return chances;
+    }
+
+    private float calculatePassSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha, EFootballPlayerPost receiverPost) {
+        float chances = 0;
+
+        int passes = cha.getPasses();
+
+        if (EFootballPlayerPost.GOALKEEPER.equals(fp.getPost())) {
+            chances = (float) Math.min((1/passes)+0.02, 0.25);
+        } else if (EFootballPlayerPost.DEFENDER.equals(fp.getPost())) {
+            if (EFootballPlayerPost.GOALKEEPER.equals(receiverPost) || EFootballPlayerPost.DEFENDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.02, 0.25);
+            } else if (EFootballPlayerPost.MIDFIELDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.05, 0.30);
+            }
+        } else if (EFootballPlayerPost.MIDFIELDER.equals(fp.getPost())) {
+            if (EFootballPlayerPost.DEFENDER.equals(receiverPost) || EFootballPlayerPost.MIDFIELDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.1, 0.25);
+            } else if (EFootballPlayerPost.FORWARD.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.25, 0.75);
+            }
+        } else {
+            if (EFootballPlayerPost.MIDFIELDER.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.1, 0.25);
+            } else if (EFootballPlayerPost.FORWARD.equals(receiverPost)) {
+                chances = (float) Math.min((1/passes)+0.25, 0.75);
+            }
+        }
+
+        chances *= 100;
+        chances = 100 - chances;
+
+        return chances;    
+    }
+
+    private float calculateLongPassSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha, EFootballPlayerPost receiverPost) {
+        double chances = 0;
+
+        int longPasses = cha.getLongPasses();
+        double threshold = 0.075;
+        double basis = 0.75;
+        EFootballPlayerPost post = fp.getPost();
+
+        if (EFootballPlayerPost.GOALKEEPER.equals(post)) {
+            if (EFootballPlayerPost.MIDFIELDER.equals(receiverPost)) {
+                basis = 0.3;
+            } else if (EFootballPlayerPost.FORWARD.equals(receiverPost)) {
+                basis = 0.4;
+            }
+        } else if (EFootballPlayerPost.DEFENDER.equals(post)) {
+            if (EFootballPlayerPost.FORWARD.equals(receiverPost)) {
+                basis = 0.3;
+            }
+        }
+
+        chances = (1 / (1 + Math.exp(-threshold * longPasses))) - basis;
+
+        chances = chances > 0 ? chances : 0;
+
+        chances *= 100;
+
+        return (float) chances;
+    }
+
+    private float calculateShotSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha) {
+        double chances = 0;
+        int shots = cha.getShots();
+        double threshold = 0.075;
+        double basis = 0.25;
+
+        chances = (1 / (1 + Math.exp(-threshold * shots))) - basis;
+
+        chances *= 100;
+
+        return (float) chances;
+    }
+
+    private float calculateLongShotSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha) {
+        double chances = 0;
+        int longShots = cha.getLongShots();
+        double threshold = 0.075;
+        double basis = 0.75;
+        EFootballPlayerPost post = fp.getPost();
+
+        if (EFootballPlayerPost.MIDFIELDER.equals(post)) {
+            basis = 0.6;
+        } else if (EFootballPlayerPost.FORWARD.equals(post)) {
+            basis = 0.5;
+        }
+
+        chances = (1 / (1 + Math.exp(-threshold * longShots))) - basis;
+
+        chances = chances > 0 ? chances : 0;
+
+        chances *= 100;
+
+        return (float) chances;
+    }
+
+    private float calculateInterceptionSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha) {
+        double chances = 0;
+
+        int interceptions = cha.getInterceptions();
+        double threshold = 0.075;
+        double basis = 0.75;
+        EFootballPlayerPost post = fp.getPost();
+
+        if (EFootballPlayerPost.DEFENDER.equals(post) || EFootballPlayerPost.MIDFIELDER.equals(post)) {
+            basis = 0.4;
+        } else if (EFootballPlayerPost.FORWARD.equals(post)) {
+            basis = 0.3;
+        }
+
+        chances = (1 / (1 + Math.exp(-threshold * interceptions))) - basis;
+
+        chances = chances > 0 ? chances : 0;
+
+        chances *= 100;
+
+        return (float) chances;
+    }
+
+    private float calculateSaveSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha) {
+        float chances = 0;
+
+        int reflexes = cha.getReflexes();
+
+        chances = (float) Math.min((1/reflexes)+0.1, 0.25);
+
+        chances *= 100;
+        chances = 100 - chances;
+
+        return chances; 
+    }
+
+    private float calculateShotStoppingSuccessProbability(FootballPlayer fp, PlayerCharacteristics cha) {
+        float chances = 0;
+
+        int shotStopping = cha.getShotStopping();
+
+        chances = (float) Math.min((1/shotStopping)+0.1, 0.25);
+
+        chances *= 100;
+        chances = 100 - chances;
+
+        return chances; 
+    }
+
+    private boolean actionSuccess(float probability) {
+        Random p = new Random();
+        float rand = p.nextFloat();
+
+        return rand < (probability/100);
+    }
+
+    private void processMatchXpTable(Map<Long, Integer> matchXpTable, Long possessionnerId, int earnedXp) {
+        matchXpTable.put(possessionnerId, matchXpTable.get(possessionnerId) + earnedXp);
+    }
+
+    private FootballPlayer getGoalkeeper(List<FootballPlayer> teamPlayers) {
+        return teamPlayers.stream().filter(fp -> EFootballPlayerPost.GOALKEEPER.equals(fp.getPost())).findAny().orElseThrow();
+    }
+
+    private List<FootballPlayer> getPotentialInterceptors(List<FootballPlayer> team, EFootballPlayerPost opponentReceiverPost) {
+        List<FootballPlayer> potentials = new ArrayList<>();
+
+        switch (opponentReceiverPost) {
+            case GOALKEEPER:
+            case DEFENDER:
+                potentials = team.stream().filter(fp -> EFootballPlayerPost.FORWARD.equals(fp.getPost())).toList();
+                break;
+            case MIDFIELDER:
+                potentials = team.stream().filter(fp -> EFootballPlayerPost.MIDFIELDER.equals(fp.getPost())).toList();
+                break;
+            case FORWARD:
+                potentials = team.stream().filter(fp -> EFootballPlayerPost.DEFENDER.equals(fp.getPost())).toList();
+                break;
+        }
+
+        return potentials;
+    }
+
+    private FootballPlayer determineBestCornerKicker(List<FootballPlayer> teamPlayers) {
+        Collections.shuffle(teamPlayers);
+
+        FootballPlayer bestCornerKicker = teamPlayers.get(0);
+
+        for (FootballPlayer fp : teamPlayers) {
+            int bestCornerKickerStat = bestCornerKicker.getPlayerCharacteristics().getCorners();
+            int fpCornerStats = fp.getPlayerCharacteristics().getCorners();
+
+            if (fpCornerStats > bestCornerKickerStat) {
+                bestCornerKicker = fp;
+            }
+        }
+
+        return bestCornerKicker;
     }
 }

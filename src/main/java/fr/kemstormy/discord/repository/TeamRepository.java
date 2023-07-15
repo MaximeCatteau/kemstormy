@@ -14,12 +14,33 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     @Query(nativeQuery = true, value = "select * from team where lower(name) = lower(:name)")
     public Team findByTeamName(@Param("name") String name);
 
-    @Query(nativeQuery = true, value = "select * from team t where quota_defenders > (select count(*) from football_player fp where club_id = t.id and post = :post) order by random() limit 1")
-    public Team getMatchingTeam(@Param("post") int post);
+    @Query(nativeQuery = true, value = "select * from team t where league_id = 1 and quota_goal_keepers > (select count(*) from football_player fp where club_id = t.id and post = 0) order by random() limit 1")
+    public Team getMatchingTeamForGoalkeepers();
+
+    @Query(nativeQuery = true, value = "select * from team t where league_id = 1 and quota_defenders > (select count(*) from football_player fp where club_id = t.id and post = 1) order by random() limit 1")
+    public Team getMatchingTeamForDefenders();
+
+    @Query(nativeQuery = true, value = "select * from team t where league_id = 1 and quota_midfielders > (select count(*) from football_player fp where club_id = t.id and post = 2) order by random() limit 1")
+    public Team getMatchingTeamForMidfielders();
+
+    @Query(nativeQuery = true, value = "select * from team t where league_id = 1 and quota_forwards > (select count(*) from football_player fp where club_id = t.id and post = 3) order by random() limit 1")
+    public Team getMatchingTeamForForwards();
 
     @Query(nativeQuery = true, value = "select * from team where league_id  = :leagueId")
     public List<Team> getLeagueTeams(@Param("leagueId") Long leagueId);
     
     @Query(nativeQuery = true, value = "select * from team t order by random() limit(2)")
     public List<Team> getTwoRandomTeamsForMatch();
+
+    @Query(nativeQuery = true, value = "select sum(quota_goal_keepers) from team t where league_id = :leagueId")
+    int getGoalkeepersQuotaSumForTeams(@Param("leagueId") Long leagueId);
+
+    @Query(nativeQuery = true, value = "select sum(quota_defenders) from team t where league_id = :leagueId")
+    int getDefendersQuotaSumForTeams(@Param("leagueId") Long leagueId);
+    
+    @Query(nativeQuery = true, value = "select sum(quota_midfielders) from team t where league_id = :leagueId")
+    int getMidfieldersQuotaSumForTeams(@Param("leagueId") Long leagueId);
+    
+    @Query(nativeQuery = true, value = "select sum(quota_forwards) from team t where league_id = :leagueId")
+    int getForwardsQuotaSumForTeams(@Param("leagueId") Long leagueId);
 }

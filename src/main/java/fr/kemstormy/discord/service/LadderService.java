@@ -67,7 +67,7 @@ public class LadderService {
         
         // Draw a rectangle using the parameters
         graphics.setColor(fillColor);
-        graphics.fillRect(parameter1, parameter2, 2400, 1000);
+        graphics.fillRect(parameter1, parameter2, 2400, 1450);
 
         String hexHeadersColor = "#cdfb0a";
         int r = Integer.valueOf(hexHeadersColor.substring(1, 3), 16);
@@ -134,7 +134,7 @@ public class LadderService {
 
     private BufferedImage createLadderImage(List<Ladder> ladder) throws FontFormatException, IOException {
 		int width = 2400; // Width of the image
-        int height = 1000; // Height of the image
+        int height = 1450; // Height of the image
         String hexBackgroundColor = "#022149";
         int r = Integer.valueOf(hexBackgroundColor.substring(1, 3), 16);
         int g = Integer.valueOf(hexBackgroundColor.substring(3, 5), 16);
