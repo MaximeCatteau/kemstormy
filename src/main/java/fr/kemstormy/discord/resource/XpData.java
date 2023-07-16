@@ -59,12 +59,9 @@ public class XpData {
       * PLAYER XP PROCESSING
       */
 
-      public boolean willPlayerUp(FootballPlayer fp, int acquiredExperience) throws IOException {
-        int footballPlayerLevel = fp.getLevel();
-        int footballPlayerExperience = fp.getPlayerCharacteristics().getExperience();
-
-        int nextFootballPlayerLevel = footballPlayerLevel + 1;
-        int addedExperience = footballPlayerExperience + acquiredExperience;
+      public boolean willPlayerUp(int lvl, int currentXp, int acquiredExperience) throws IOException {
+        int nextFootballPlayerLevel = lvl + 1;
+        int addedExperience = currentXp + acquiredExperience;
 
         Map<Integer, Integer> xpMapData = this.loadXpPerLevel();
 
