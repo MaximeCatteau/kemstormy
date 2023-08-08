@@ -39,4 +39,6 @@ public class MatchDataResource {
     private EMatchAction action;
 
     private Map<Long, Integer> matchXpTable = new HashMap<>();
+
+    private int percentMultiplicator = 0;
 }
