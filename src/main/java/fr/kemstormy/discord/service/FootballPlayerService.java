@@ -51,6 +51,9 @@ public class FootballPlayerService {
     public FootballPlayer createOrUpdateFootballPlayer(FootballPlayer footballPlayer) {
         if(footballPlayer.getId() == null) { 
             footballPlayer.setGenerationType(EFootballPlayerGenerationType.BY_PLAYER);
+        } else {
+            this.playerCharacteristicsRepository.save(footballPlayer.getPlayerCharacteristics());
+            return this.footballPlayerRepository.save(footballPlayer);
         }
 
         PlayerCharacteristics playerCharacteristics = new PlayerCharacteristics();

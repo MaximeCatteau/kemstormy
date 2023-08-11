@@ -7,12 +7,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.channel.PrivateChannel;
 import org.javacord.api.entity.channel.TextChannel;
+import org.javacord.api.entity.emoji.Emoji;
 import org.javacord.api.entity.intent.Intent;
+import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.Embed;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
@@ -28,6 +33,7 @@ import fr.kemstormy.discord.model.FootballPlayer;
 import fr.kemstormy.discord.model.Ladder;
 import fr.kemstormy.discord.model.League;
 import fr.kemstormy.discord.model.Nationality;
+import fr.kemstormy.discord.model.PlayerCharacteristics;
 import fr.kemstormy.discord.model.PlayerRecord;
 import fr.kemstormy.discord.model.Team;
 import fr.kemstormy.discord.model.TeamRecord;
@@ -446,6 +452,159 @@ public class DiscordUtils {
                 break;
         }
         return msg;
+    }
+
+    public String getPrivateCommand(MessageCreateEvent event, DiscordApi api) throws InterruptedException, ExecutionException {
+        String msg = "";
+        String content = event.getMessageContent();
+        PrivateChannel channel = event.getPrivateChannel().get();
+
+        List<String> commands = this.removeCommandDiscriminator(content);
+        String mainCommand = commands.get(0);
+        String authorId = event.getMessageAuthor().getIdAsString();
+        
+        DiscordUser discordUser = this.discordUserService.getByDiscordId(authorId);
+
+        if (discordUser == null) {
+            return "Désolé, vous devez vous inscrire sur un des serveurs partenaires pour envoyer des commandes";
+        }
+
+        FootballPlayer footballPlayer = this.footballPlayerService.findByOwnerId(discordUser.getId());
+
+        switch (mainCommand) {
+            case "upgrade":
+                if (footballPlayer == null) {
+                    return "Désolé, vous n'avez pas encore créé votre joueur. Contactez votre administrateur pour plus d'informations !";
+                }
+
+                if (footballPlayer.getPointsToSet() < 1) {
+                    return "Vous n'avez pas assez de points. Gagnez en expérience afin de monter votre niveau et gagner des points de caractéristiques !";
+                }
+
+                Message message = channel.sendMessage( "Souhaitez-vous augmenter les capacités de " + footballPlayer.getMatchName() + " ?").get();
+                message.addReaction("✅");
+				message.addReaction("❌");
+
+                message.addReactionAddListener(react -> {
+					User user = null;
+                    try {
+                        user = api.getUserById(react.getUserIdAsString()).get();
+                        if (!user.isBot() && react.getEmoji().equalsEmoji("✅")) {
+                            Message whatSkill = channel.sendMessage(
+                                "Quelle compétence voulez-vous augmenter ?\n" +
+                                "0️⃣ - Finition\n" +
+                                "1️⃣ - Passes courtes\n" +
+                                "2️⃣ - Tirs de loin\n" +
+                                "3️⃣ - Interceptions\n" +
+                                "4️⃣ - Tacles\n" +
+                                "5️⃣ - Passes longues\n" +
+                                "6️⃣ - Corners\n" +
+                                "7️⃣ - Dribbles\n" +
+                                "8️⃣ - Coups francs\n" +
+                                "9️⃣ - Penalty\n" +
+                                "🔟 - Réflexes (gardiens)\n" +
+                                "🔴 - Arrêts (gardiens)\n"
+                                ).get();
+                            whatSkill.addReaction("0️⃣");
+                            whatSkill.addReaction("1️⃣");
+                            whatSkill.addReaction("2️⃣");
+                            whatSkill.addReaction("3️⃣");
+                            whatSkill.addReaction("4️⃣");
+                            whatSkill.addReaction("5️⃣");
+                            whatSkill.addReaction("6️⃣");
+                            whatSkill.addReaction("7️⃣");
+                            whatSkill.addReaction("8️⃣");
+                            whatSkill.addReaction("9️⃣");
+                            whatSkill.addReaction("🔟");
+                            whatSkill.addReaction("🔴");
+
+                            whatSkill.addReactionAddListener(skill -> {
+                                User skillUser;
+                                try {
+                                    skillUser = api.getUserById(skill.getUserIdAsString()).get();
+                                    if (!skillUser.isBot()) {
+                                        this.handleSkillUpgradeReaction(channel, skill.getEmoji(), footballPlayer);
+                                        whatSkill.delete();
+                                        message.delete();
+                                    }
+                                } catch (InterruptedException | ExecutionException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }).removeAfter(2, TimeUnit.MINUTES);
+                        } else if (!user.isBot() && react.getEmoji().equalsEmoji("❌")) {
+                            channel.sendMessage("Dommage mon frérito !");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+				}).removeAfter(10, TimeUnit.MINUTES);
+        }
+
+        return msg;
+    }
+
+    private void handleSkillUpgradeReaction(PrivateChannel channel, Emoji emoji, FootballPlayer footballPlayer) {
+        PlayerCharacteristics pc = footballPlayer.getPlayerCharacteristics();
+
+        switch (emoji.asUnicodeEmoji().get()) {
+            case "0️⃣":
+                channel.sendMessage("Vous avez augmenté votre finition de 1 !");
+                pc.setShots(pc.getShots() < 99 ? pc.getShots() + 1 : 99);
+                break;
+            case "1️⃣":
+                channel.sendMessage("Vous avez augmenté vos passes de 1 !");
+                pc.setPasses(pc.getPasses() < 99 ? pc.getPasses() + 1 : 99);
+                break;
+            case "2️⃣":
+                channel.sendMessage("Vous avez augmenté vos tirs de loin de 1 !");
+                pc.setLongShots(pc.getLongShots() < 99 ? pc.getLongShots() + 1 : 99);
+                break;
+            case "3️⃣":
+                channel.sendMessage("Vous avez augmenté vos interceptions de 1 !");
+                pc.setInterceptions(pc.getInterceptions() < 99 ? pc.getInterceptions() + 1 : 99);
+                break;
+            case "4️⃣":
+                channel.sendMessage("Vous avez augmenté vos tacles de 1 !");
+                pc.setTackles(pc.getTackles() < 99 ? pc.getTackles() + 1 : 99);
+                break;
+            case "5️⃣":
+                channel.sendMessage("Vous avez augmenté vos passes longues de 1 !");
+                pc.setLongPasses(pc.getLongPasses() < 99 ? pc.getLongPasses() + 1 : 99);
+                break;
+            case "6️⃣":
+                channel.sendMessage("Vous avez augmenté vos corners de 1 !");
+                pc.setCorners(pc.getCorners() < 99 ? pc.getCorners() + 1 : 99);
+                break;
+            case "7️⃣":
+                channel.sendMessage("Vous avez augmenté vos dribbles de 1 !");
+                pc.setDribbles(pc.getDribbles() < 99 ? pc.getDribbles() + 1 : 99);
+                break;
+            case "8️⃣":
+                channel.sendMessage("Vous avez augmenté vos coups francs de 1 !");
+                pc.setFreekicks(pc.getFreekicks() < 99 ? pc.getFreekicks() + 1 : 99);
+                break;
+            case "9️⃣":
+                channel.sendMessage("Vous avez augmenté vos penaltys de 1 !");
+                pc.setPenalty(pc.getPenalty() < 99 ? pc.getPenalty() + 1 : 99);
+                break;
+            case "🔟":
+                channel.sendMessage("Vous avez augmenté vos réflexes de 1 !");
+                pc.setReflexes(pc.getReflexes() < 99 ? pc.getReflexes() + 1 : 99);
+                break;
+            case "🔴":
+                channel.sendMessage("Vous avez augmenté vos arrêts de 1 !");
+                pc.setShotStopping(pc.getShotStopping() < 99 ? pc.getShotStopping() + 1 : 99);
+                break;
+            default:
+                channel.sendMessage("Emoji non reconnu !");
+                break;
+        }
+
+        footballPlayer.setPlayerCharacteristics(pc);
+        footballPlayer.setPointsToSet(footballPlayer.getPointsToSet() > 0 ? footballPlayer.getPointsToSet() - 1 : 0);
+
+        this.footballPlayerService.createOrUpdateFootballPlayer(footballPlayer);
     }
 
     private List<String> removeCommandDiscriminator(String command) {

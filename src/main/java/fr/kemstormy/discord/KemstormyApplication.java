@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +51,8 @@ public class KemstormyApplication {
 
 	private static final String TOKEN = "prank";
 
+	private static final List<String> CHANNEL_TOKENS = new ArrayList();
+
 	public static void main(String[] args) throws Exception {
 		applicationContext = SpringApplication.run(KemstormyApplication.class, args);
 
@@ -63,6 +67,9 @@ public class KemstormyApplication {
 		TeamRecordService teamRecordService = applicationContext.getBean(TeamRecordService.class);
 		PlayerRecordService playerRecordService = applicationContext.getBean(PlayerRecordService.class);
 
+		// Adding channel token to list
+		CHANNEL_TOKENS.add("1138507381546946611");
+
 		DiscordUtils utils = new DiscordUtils(discordUserService, footballPlayerService, teamService, matchService, leagueService, ladderService, matchStrikerService, matchDecisivePassersService, teamRecordService, playerRecordService);
 		DiscordApi api = new DiscordApiBuilder()
 			.setToken(TOKEN)
@@ -70,25 +77,46 @@ public class KemstormyApplication {
 			.login()
 			.join();
 
+		
 		api.addMessageCreateListener(event -> {
-			if (!event.getMessageAuthor().isBotUser() && event.getMessageContent() != null && event.getMessageContent().length() > 0 && event.getMessageContent().startsWith("!")) {
-				String message = event.getMessageContent();
-				String messageToSendBack = "";
-				try {
-					messageToSendBack = utils.getCommand(message, event.getMessageAuthor().asUser().orElseThrow(), event);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
+			// commandes exécutables sur serveur
+			if (CHANNEL_TOKENS.contains(event.getChannel().getIdAsString())) {
+				if (!event.getMessageAuthor().isBotUser() && event.getMessageContent() != null && event.getMessageContent().length() > 0 && event.getMessageContent().startsWith("!")) {
+					String message = event.getMessageContent();
+					String messageToSendBack = "";
+					try {
+						messageToSendBack = utils.getCommand(message, event.getMessageAuthor().asUser().orElseThrow(), event);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					event.getChannel().sendMessage(messageToSendBack);
 				}
-				event.getChannel().sendMessage(messageToSendBack);
+			}
+			// commandes exécutables en MP
+			else if (event.getPrivateChannel().isPresent()) {
+				if (!event.getMessageAuthor().isBotUser() && event.getMessageContent() != null && event.getMessageContent().length() > 0 && event.getMessageContent().startsWith("!")) {
+					String messageToSendBack = "";
+
+					try {
+						messageToSendBack = utils.getPrivateCommand(event, api);
+					} catch (InterruptedException | ExecutionException e) {
+						e.printStackTrace();
+					}
+
+					event.getPrivateChannel().get().sendMessage(messageToSendBack);
+					
+				}
 			}
 		});
+
+		
 	}
 
 	@Scheduled(fixedDelay = 1000 * 60)
 	public void sendEveryMinutes() throws InterruptedException, ExecutionException {
-		if (applicationContext != null) {
+		/*if (applicationContext != null) {
 			FootballPlayerService footballPlayerService = applicationContext.getBean(FootballPlayerService.class);
 			TeamService teamService = applicationContext.getBean(TeamService.class);
 
@@ -137,6 +165,6 @@ public class KemstormyApplication {
 
 				tc.sendMessage("TRANSFERT - " + random.getFirstName() + " " + random.getLastName() + " a rejoint " + recruiter.getName() + " !");
 			}
-		}
+		}*/
 	}
 }
