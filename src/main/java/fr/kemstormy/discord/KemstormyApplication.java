@@ -116,7 +116,7 @@ public class KemstormyApplication {
 
 	@Scheduled(fixedDelay = 1000 * 60)
 	public void sendEveryMinutes() throws InterruptedException, ExecutionException {
-		/*if (applicationContext != null) {
+		if (applicationContext != null) {
 			FootballPlayerService footballPlayerService = applicationContext.getBean(FootballPlayerService.class);
 			TeamService teamService = applicationContext.getBean(TeamService.class);
 
@@ -134,9 +134,9 @@ public class KemstormyApplication {
 				.login()
 				.join();
 
-			TextChannel tc = api.getTextChannelById("185791467732729856").orElseThrow();
+			TextChannel tc = api.getTextChannelById("1138507381546946611").orElseThrow();
 
-			if (EFootballPlayerGenerationType.BY_PLAYER.equals(random.getGenerationType())) {
+			if (recruiter != null && EFootballPlayerGenerationType.BY_PLAYER.equals(random.getGenerationType())) {
 				Message message = tc.sendMessage("<@" + random.getOwner().getDiscordId() + "> PROPOSITION DE TRANSFERT\n" + recruiter.getName() + " propose  à " + random.getMatchName() + " de rejoindre l'équipe, acceptez-vous ?").get();
 
 				message.addReaction("✅");
@@ -150,8 +150,7 @@ public class KemstormyApplication {
 						e.printStackTrace();
 					}
 					if (!user.isBot() && user.getIdAsString().equals(random.getOwner().getDiscordId()) && react.getEmoji().equalsEmoji("✅")) {
-						random.setClub(recruiter);
-						footballPlayerService.createOrUpdateFootballPlayer(random);
+						teamService.recruitPlayer(recruiter, random);
 						tc.sendMessage("TRANSFERT - " + random.getFirstName() + " " + random.getLastName() + " a rejoint " + recruiter.getName() + " !");
 						react.deleteMessage();
 					} else if (!user.isBot() && user.getIdAsString().equals(random.getOwner().getDiscordId()) && react.getEmoji().equalsEmoji("❌")) {
@@ -165,6 +164,6 @@ public class KemstormyApplication {
 
 				tc.sendMessage("TRANSFERT - " + random.getFirstName() + " " + random.getLastName() + " a rejoint " + recruiter.getName() + " !");
 			}
-		}*/
+		}
 	}
 }

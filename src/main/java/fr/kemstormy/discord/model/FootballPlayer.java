@@ -53,4 +53,22 @@ public class FootballPlayer {
     public String getMatchName() {
         return this.getFirstName().toUpperCase().charAt(0) + ". " + this.getLastName();
     }
+
+    public int getOverallCharacteristicsAverage() {
+        PlayerCharacteristics pc = this.getPlayerCharacteristics();
+        return (
+            pc.getCorners() + 
+            pc.getDribbles() + 
+            pc.getFreekicks() + 
+            pc.getInterceptions() + 
+            pc.getLongPasses() + 
+            pc.getLongShots() + 
+            pc.getPasses() + 
+            pc.getPenalty() + 
+            pc.getShotStopping() + 
+            pc.getShots() + 
+            pc.getReflexes() + 
+            pc.getTackles()
+        ) / 12;
+    }
 }
